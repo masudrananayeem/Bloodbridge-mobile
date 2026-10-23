@@ -8,6 +8,7 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
   },
   plugins: {
+    SplashScreen: { launchShowDuration: 1500, backgroundColor: "#ffffff", showSpinner: false },
     FirebaseAuthentication: {
       skipNativeAuth: true,
       providers: ["google.com"],

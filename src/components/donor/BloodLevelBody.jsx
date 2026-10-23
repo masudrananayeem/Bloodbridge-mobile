@@ -113,6 +113,16 @@ export default function BloodLevelBody({ lastDonationDate }) {
             <rect x="0" y="0" width="120" height="260" fill={`url(#shine-${uid})`} />
           </g>
 
+
+          <motion.path
+            d="M60 100 C40 86 46 72 56 76 C58 77 59.5 78.5 60 80 C60.5 78.5 62 77 64 76 C74 72 80 86 60 100 Z"
+            fill="#fff"
+            opacity="0.85"
+            style={{ transformBox: "fill-box", transformOrigin: "center" }}
+            animate={{ scale: [1, 1.22, 1, 1.15, 1] }}
+            transition={{ duration: recovering ? 1.6 : 1.1, repeat: Infinity, ease: "easeInOut", times: [0, 0.15, 0.3, 0.45, 1] }}
+          />
+
           <g fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400 dark:text-white/30">
             <BodyShapes />
           </g>

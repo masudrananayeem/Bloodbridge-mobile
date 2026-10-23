@@ -15,7 +15,11 @@
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.5.2",
     "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
+    "@capacitor/keyboard": "^8.0.6",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "axios": "^1.7.9",
     "firebase": "^12.19.0",
     "framer-motion": "^11.15.0",

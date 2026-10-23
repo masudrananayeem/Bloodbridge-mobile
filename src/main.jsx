@@ -7,6 +7,9 @@ import App from "./App.jsx";
 import ThemeProvider from "./context/ThemeContext.jsx";
 import AuthProvider from "./context/AuthContext.jsx";
 import LanguageProvider from "./context/LanguageContext.jsx";
+import { initNative } from "./native.js";
+
+initNative();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -15,7 +18,7 @@ createRoot(document.getElementById("root")).render(
         <LanguageProvider>
           <AuthProvider>
             <App />
-            <Toaster position="top-right" reverseOrder={false} />
+            <Toaster position="top-center" reverseOrder={false} />
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>
