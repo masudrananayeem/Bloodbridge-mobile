@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bloodbridge.app.ui.AppViewModel
 import com.bloodbridge.app.ui.BloodBridgeTheme
-import com.bloodbridge.app.ui.screens.HomeScreen
+import com.bloodbridge.app.ui.screens.MainShell
 import com.bloodbridge.app.ui.screens.LoginScreen
 import com.bloodbridge.app.ui.screens.RegisterScreen
 
@@ -39,7 +39,7 @@ private fun Root(vm: AppViewModel = viewModel()) {
     var showRegister by rememberSaveable { mutableStateOf(false) }
     when {
         vm.booting -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        vm.user != null -> HomeScreen(vm)
+        vm.user != null -> MainShell(vm)
         showRegister -> RegisterScreen(vm, onGoLogin = { showRegister = false })
         else -> LoginScreen(vm, onGoRegister = { showRegister = true })
     }

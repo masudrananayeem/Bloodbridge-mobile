@@ -12,12 +12,16 @@ android {
 
     defaultConfig {
         applicationId = "com.bloodbridge.app"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         val apiBase = (project.findProperty("API_BASE_URL") as String?) ?: "http://10.0.2.2:5000/api/"
         buildConfigField("String", "API_BASE_URL", "\"$apiBase\"")
+        val cloudName = (project.findProperty("CLOUDINARY_CLOUD_NAME") as String?) ?: ""
+        val uploadPreset = (project.findProperty("CLOUDINARY_UPLOAD_PRESET") as String?) ?: ""
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"$cloudName\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"$uploadPreset\"")
     }
 
     signingConfigs {
@@ -66,6 +70,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.core:core-ktx:1.13.1")
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

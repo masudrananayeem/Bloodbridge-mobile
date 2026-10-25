@@ -80,9 +80,130 @@ data class ErrorResponse(
     val errors: List<FieldError> = emptyList(),
 )
 
+@Serializable
+data class BloodRequest(
+    val id: String = "",
+    val seekerUid: String = "",
+    val seekerName: String = "",
+    val seekerPhone: String = "",
+    val bloodGroup: String = "",
+    val units: Int = 1,
+    val hospital: String = "",
+    val district: String = "",
+    val upazila: String = "",
+    val urgency: String = "",
+    val reason: String = "",
+    val message: String = "",
+    val neededByDate: String? = null,
+    val status: String = "pending",
+    val isEmergency: Boolean = false,
+    val targetDonorUid: String? = null,
+    val targetDonorName: String? = null,
+    val acceptedDonorName: String? = null,
+    val acceptedDonorPhone: String? = null,
+    val createdAt: String? = null,
+    val distanceKm: Double? = null,
+)
+
+@Serializable
+data class RequestsResponse(val success: Boolean = true, val requests: List<BloodRequest> = emptyList())
+
+@Serializable
+data class CreateRequestBody(
+    val bloodGroup: String,
+    val units: Int,
+    val hospital: String,
+    val district: String,
+    val upazila: String,
+    val urgency: String,
+    val neededByDate: String,
+    val message: String = "",
+    val targetDonorUid: String? = null,
+    val isEmergency: Boolean = false,
+)
+
+@Serializable
+data class RespondBody(val action: String)
+
+@Serializable
+data class AvailabilityBody(val isAvailable: Boolean)
+
+@Serializable
+class EmptyBody
+
+@Serializable
+data class OkResponse(val success: Boolean = true)
+
+@Serializable
+data class RecordDonationResponse(val success: Boolean = true, val user: User = User())
+
+@Serializable
+data class AppNotification(
+    val id: String = "",
+    val type: String = "",
+    val message: String = "",
+    val relatedRequestId: String? = null,
+    val isRead: Boolean = false,
+    val createdAt: String? = null,
+)
+
+@Serializable
+data class NotificationsResponse(
+    val success: Boolean = true,
+    val notifications: List<AppNotification> = emptyList(),
+    val unreadCount: Int = 0,
+)
+
+@Serializable
+data class Donation(
+    val id: String = "",
+    val hospital: String = "",
+    val units: Int = 1,
+    val district: String = "",
+    val bloodGroup: String = "",
+    val donationDate: String? = null,
+)
+
+@Serializable
+data class HistoryResponse(val success: Boolean = true, val history: List<Donation> = emptyList())
+
+@Serializable
+data class UpdateProfileBody(
+    val fullName: String? = null,
+    val phone: String? = null,
+    val bloodGroup: String? = null,
+    val district: String? = null,
+    val upazila: String? = null,
+    val address: String? = null,
+    val photoURL: String? = null,
+)
+
+@Serializable
+data class UserResponse(val success: Boolean = true, val user: User = User())
+
+@Serializable
+data class Organization(
+    val id: String = "",
+    val name: String = "",
+    val type: String = "",
+    val description: String = "",
+    val district: String = "",
+    val upazila: String = "",
+    val address: String = "",
+    val phone: String = "",
+    val email: String = "",
+    val website: String = "",
+    val isVerified: Boolean = false,
+)
+
+@Serializable
+data class OrganizationsResponse(val success: Boolean = true, val organizations: List<Organization> = emptyList())
+
 object Constants {
     val bloodGroups = listOf("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")
     val genders = listOf("male", "female", "other")
+    val urgencies = listOf("Low", "Medium", "High")
+    val orgTypes = listOf("Voluntary Group", "NGO", "Blood Bank", "Hospital")
     val districts = listOf(
         "Bagerhat", "Bandarban", "Barguna", "Barishal", "Bhola", "Bogura",
         "Brahmanbaria", "Chandpur", "Chattogram", "Chuadanga", "Cox's Bazar",

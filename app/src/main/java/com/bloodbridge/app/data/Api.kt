@@ -9,7 +9,11 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PUT
+import retrofit2.http.PATCH
+import retrofit2.http.Path
 import retrofit2.http.POST
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
@@ -30,6 +34,55 @@ interface BloodBridgeApi {
         @Query("district") district: String?,
         @Query("nearMe") nearMe: Boolean?,
     ): DonorsResponse
+
+    @POST("requests")
+    suspend fun createRequest(@Body body: CreateRequestBody): OkResponse
+
+    @GET("requests/my-requests")
+    suspend fun myRequests(): RequestsResponse
+
+    @GET("requests/incoming")
+    suspend fun incomingRequests(): RequestsResponse
+
+    @GET("requests/nearby")
+    suspend fun nearbyRequests(): RequestsResponse
+
+    @PATCH("requests/{id}/cancel")
+    suspend fun cancelRequest(@Path("id") id: String): OkResponse
+
+    @PATCH("requests/{id}/respond")
+    suspend fun respond(@Path("id") id: String, @Body body: RespondBody): OkResponse
+
+    @PATCH("users/availability")
+    suspend fun setAvailability(@Body body: AvailabilityBody): OkResponse
+
+    @POST("users/record-donation")
+    suspend fun recordDonation(@Body body: EmptyBody): RecordDonationResponse
+
+    @GET("users/donation-history")
+    suspend fun donationHistory(): HistoryResponse
+
+    @PUT("users/profile")
+    suspend fun updateProfile(@Body body: UpdateProfileBody): UserResponse
+
+    @DELETE("users/me")
+    suspend fun deleteMe(): OkResponse
+
+    @GET("organizations")
+    suspend fun organizations(
+        @Query("district") district: String?,
+        @Query("type") type: String?,
+        @Query("search") search: String?,
+    ): OrganizationsResponse
+
+    @GET("notifications")
+    suspend fun notifications(): NotificationsResponse
+
+    @PATCH("notifications/{id}/read")
+    suspend fun markRead(@Path("id") id: String): OkResponse
+
+    @PATCH("notifications/read-all")
+    suspend fun markAllRead(): OkResponse
 }
 
 /** Keeps the backend JWT on the device (SharedPreferences). */

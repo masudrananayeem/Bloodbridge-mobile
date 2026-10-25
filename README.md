@@ -1,8 +1,11 @@
 # BloodBridge — native Android (Kotlin + Jetpack Compose)
 
-Phase 1: Login, Register, Search donors (backend same: Cloudflare Worker + Firebase).
-Phase 2+ (baki): dashboard, request pathano/incoming, availability + donation history + body animation,
-notification, profile/photo, organizations, feedback, admin, BN/EN.
+Phase 1: Login, Register, Search donors.
+Phase 2: bottom tabs — Search (+ direct request, emergency request), Requests (My / Incoming accept-decline / Nearby),
+Donor (availability, "I donated today", blood-level body animation, history), Alerts (notifications), Profile.
+Phase 3: profile edit + photo upload (Cloudinary), organizations directory (call button), forgot password, delete account.
+  -> gradle.properties e CLOUDINARY_CLOUD_NAME ar CLOUDINARY_UPLOAD_PRESET dite hobe (web-er VITE_CLOUDINARY_* er same value).
+Phase 4 (baki): Bangla/English, Google login, feedback, admin panel.
 
 ## Run (VS Code-e code dekhben, build Android Studio-te)
 1. Android Studio install (developer.android.com/studio). File > Open > ei folder.

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +36,28 @@ import com.bloodbridge.app.ui.PrimaryButton
 fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var showReset by rememberSaveable { mutableStateOf(false) }
+    var resetEmail by rememberSaveable { mutableStateOf("") }
+
+    if (showReset) {
+        AlertDialog(
+            onDismissRequest = { showReset = false; vm.clearError() },
+            title = { Text("Reset password") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("We'll email you a link to set a new password.")
+                    AppTextField(resetEmail, { resetEmail = it }, "Email", keyboardType = KeyboardType.Email)
+                    ErrorBanner(vm.error)
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !vm.busy, onClick = { vm.resetPassword(resetEmail) { showReset = false } }) {
+                    Text(if (vm.busy) "Sending…" else "Send link")
+                }
+            },
+            dismissButton = { TextButton(onClick = { showReset = false; vm.clearError() }) { Text("Cancel") } },
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -53,7 +76,9 @@ fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
 
         AppTextField(email, { email = it }, "Email", keyboardType = KeyboardType.Email)
         AppTextField(password, { password = it }, "Password", password = true)
-        ErrorBanner(vm.error)
+        if (!showReset) ErrorBanner(vm.error)
+        vm.info?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        TextButton(onClick = { vm.clearError(); resetEmail = email; showReset = true }) { Text("Forgot password?") }
         PrimaryButton("Log in", vm.busy, { vm.login(email, password) })
 
         TextButton(onClick = { vm.clearError(); onGoRegister() }, modifier = Modifier.fillMaxWidth()) {

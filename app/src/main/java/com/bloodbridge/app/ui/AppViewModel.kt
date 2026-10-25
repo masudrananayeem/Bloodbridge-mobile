@@ -7,6 +7,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.bloodbridge.app.data.ApiProvider
+import com.bloodbridge.app.data.AppNotification
+import com.bloodbridge.app.data.BloodRequest
+import com.bloodbridge.app.data.CreateRequestBody
+import com.bloodbridge.app.data.Donation
+import com.bloodbridge.app.data.Organization
+import com.bloodbridge.app.data.UpdateProfileBody
+import android.net.Uri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.bloodbridge.app.data.Donor
 import com.bloodbridge.app.data.Repository
 import com.bloodbridge.app.data.Session
@@ -31,6 +40,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var searched by mutableStateOf(false)
         private set
 
+    var info by mutableStateOf<String?>(null)
+        private set
+    fun clearInfo() { info = null }
+
+    var myRequests by mutableStateOf<List<BloodRequest>>(emptyList())
+        private set
+    var incoming by mutableStateOf<List<BloodRequest>>(emptyList())
+        private set
+    var nearby by mutableStateOf<List<BloodRequest>>(emptyList())
+        private set
+    var notifications by mutableStateOf<List<AppNotification>>(emptyList())
+        private set
+    var unreadCount by mutableStateOf(0)
+        private set
+    var history by mutableStateOf<List<Donation>>(emptyList())
+        private set
+
+    var organizations by mutableStateOf<List<Organization>>(emptyList())
+        private set
+
     init {
         viewModelScope.launch {
             user = repo.restore()
@@ -42,6 +71,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) { error = "Enter email and password."; return }
+        info = null
         launchBusy { user = repo.login(email, password) }
     }
 
@@ -70,11 +100,133 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun loadRequests() {
+        launchBusy {
+            myRequests = repo.myRequests()
+            incoming = repo.incoming()
+            nearby = repo.nearby()
+        }
+    }
+
+    fun createRequest(body: CreateRequestBody, onDone: () -> Unit) {
+        launchBusy {
+            repo.createRequest(body)
+            info = if (body.isEmergency) "Emergency request sent to the nearest donors." else "Request sent."
+            myRequests = repo.myRequests()
+            onDone()
+        }
+    }
+
+    fun cancelRequest(id: String) {
+        launchBusy {
+            repo.cancelRequest(id)
+            myRequests = repo.myRequests()
+            info = "Request cancelled."
+        }
+    }
+
+    fun respond(id: String, action: String) {
+        launchBusy {
+            repo.respond(id, action)
+            incoming = repo.incoming()
+            nearby = repo.nearby()
+            info = if (action == "accept") "You accepted this request. The seeker can now see your contact." else "Request declined."
+        }
+    }
+
+    fun loadDonorDashboard() {
+        launchBusy {
+            user = repo.me()
+            history = repo.history()
+        }
+    }
+
+    fun setAvailability(value: Boolean) {
+        launchBusy {
+            repo.setAvailability(value)
+            user = repo.me()
+        }
+    }
+
+    fun recordDonation() {
+        launchBusy {
+            user = repo.recordDonation()
+            history = repo.history()
+            info = "Donation recorded. Thank you!"
+        }
+    }
+
+    fun loadNotifications() {
+        launchBusy {
+            val res = repo.notifications()
+            notifications = res.notifications
+            unreadCount = res.unreadCount
+        }
+    }
+
+    fun markRead(id: String) {
+        launchBusy {
+            repo.markRead(id)
+            val res = repo.notifications()
+            notifications = res.notifications
+            unreadCount = res.unreadCount
+        }
+    }
+
+    fun markAllRead() {
+        launchBusy {
+            repo.markAllRead()
+            val res = repo.notifications()
+            notifications = res.notifications
+            unreadCount = res.unreadCount
+        }
+    }
+
+    fun updateProfile(body: UpdateProfileBody) {
+        launchBusy {
+            user = repo.updateProfile(body)
+            info = "Profile updated."
+        }
+    }
+
+    fun uploadPhoto(uri: Uri) {
+        launchBusy {
+            val bytes = withContext(Dispatchers.IO) {
+                getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            } ?: throw IllegalStateException("Could not read the selected image.")
+            val url = repo.uploadPhoto(bytes)
+            user = repo.updateProfile(UpdateProfileBody(photoURL = url))
+            info = "Profile photo updated."
+        }
+    }
+
+    fun loadOrganizations(district: String, type: String, search: String) {
+        launchBusy { organizations = repo.organizations(district, type, search) }
+    }
+
+    fun resetPassword(email: String, onDone: () -> Unit) {
+        if (email.isBlank()) { error = "Enter your email address."; return }
+        launchBusy {
+            repo.sendPasswordReset(email)
+            info = "Password reset email sent. Check your inbox."
+            onDone()
+        }
+    }
+
+    fun deleteAccount() {
+        launchBusy {
+            repo.deleteAccount()
+            user = null
+        }
+    }
+
     fun logout() {
         repo.logout()
         user = null
         donors = emptyList()
         searched = false
+        myRequests = emptyList(); incoming = emptyList(); nearby = emptyList()
+        notifications = emptyList(); unreadCount = 0; history = emptyList()
     }
 
     private fun launchBusy(block: suspend () -> Unit) {
