@@ -1,9 +1,0 @@
-// server/server.js (ba worker-er entry) — cors block replace korun:
-const allowed = (process.env.CLIENT_URL || "http://localhost:5173")
-  .split(",").map((s) => s.trim()).filter(Boolean);
-app.use(
-  cors({
-    origin: (origin, cb) => (!origin || allowed.includes(origin) ? cb(null, true) : cb(new Error("Not allowed by CORS"))),
-    credentials: true,
-  })
-);

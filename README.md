@@ -1,53 +1,25 @@
-# BloodBridge Mobile (Android) — Capacitor
+# BloodBridge — native Android (Kotlin + Jetpack Compose)
 
-Web client-er sob feature same; Android app hishebe package kora. Backend alada (Cloudflare Worker).
+Phase 1: Login, Register, Search donors (backend same: Cloudflare Worker + Firebase).
+Phase 2+ (baki): dashboard, request pathano/incoming, availability + donation history + body animation,
+notification, profile/photo, organizations, feedback, admin, BN/EN.
 
-## A. Locally run (VS Code, Windows)
-Lagbe: Node 22+, Git. (Emulator-e dekhte chaile Android Studio; na hole shudhu browser-e.)
+## Run (VS Code-e code dekhben, build Android Studio-te)
+1. Android Studio install (developer.android.com/studio). File > Open > ei folder.
+2. Firebase Console > Project settings > Add app > Android, package: com.bloodbridge.app
+   - google-services.json download kore  app/google-services.json  e rakhun.
+   - Authentication > Email/Password enabled.
+3. gradle.properties e API_BASE_URL set korun (shesh-e / thakte hobe):
+       API_BASE_URL=https://YOUR-WORKER.workers.dev/api/
+   Local backend + emulator: http://10.0.2.2:5000/api/   (cleartext http-er jonno manifest-e
+   android:usesCleartextTraffic="true" lagbe — shudhu debug-er jonno)
+4. Sync > Run (emulator ba USB phone).
 
-1. VS Code-e folder open kore terminal (Ctrl+`):
-       npm install
-2. `.env.example` copy kore `.env` banan, value bosan:
-       VITE_API_URL=https://APNAR-WORKER.workers.dev/api   (ba local: http://localhost:5000/api)
-       VITE_FIREBASE_*  ar  VITE_CLOUDINARY_*  (web client er moto ek-i)
-3. Browser-e chalan:
-       npm run dev        -> http://localhost:5173
-4. Android emulator/phone-e chalan (Android Studio install kora thakle):
-       npm run cap:sync
-       npm run cap:open   -> Android Studio khulbe -> Run (play button)
-   Real phone: Settings > Developer options > USB debugging on kore USB diye connect.
+## Build without Android Studio (GitHub Actions)
+Secrets: GOOGLE_SERVICES_JSON_BASE64, API_BASE_URL, (release-er jonno) ANDROID_KEYSTORE_BASE64,
+ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+Actions > "Android build" > Run workflow > artifact: debug APK / release AAB.
+Build fail korle log-er error pathan.
 
-## B. Firebase setup (ekbar)
-Firebase Console > Project settings > Your apps > Add app > Android:
-- Package name: com.bloodbridge.app
-- SHA-1: debug-er jonno `cd android && ./gradlew signingReport`; release-er jonno keystore-er SHA-1
-  (Play Console > App signing-er SHA-1 o add korben, upload korar por)
-- google-services.json download kore `android/app/google-services.json` e rakhun (git-e commit hobe na)
-- Authentication > Sign-in method: Google enabled thakte hobe.
-
-## C. Backend (Cloudflare Worker) CORS
-CLIENT_URL = https://blood-bridge.pages.dev,https://localhost,capacitor://localhost,http://localhost:5173
-Ar backend-er cors code-e comma-separated list support (server-cors-patch.txt dekhun).
-
-## D. Release build — GitHub Actions (Android Studio chhara)
-1. keystore (ekbar, SAFE rakhben, commit korben na):
-       keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias bloodbridge
-2. GitHub repo > Settings > Secrets and variables > Actions:
-       VITE_API_URL, VITE_FIREBASE_* (6), VITE_CLOUDINARY_* (2)
-       ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
-       GOOGLE_SERVICES_JSON_BASE64   (google-services.json-er base64)
-   base64 (PowerShell):  [Convert]::ToBase64String([IO.File]::ReadAllBytes("FILE")) | Set-Clipboard
-3. Actions > "Android release (AAB)" > Run workflow > artifact theke .aab download.
-
-## E. Play Store
-1. Play Console developer account ($25 ekbar).
-2. Create app > Production/Internal testing > .aab upload.
-3. Store listing: icon 512x512, feature graphic 1024x500, screenshots, description.
-4. Privacy Policy URL (live site-er /privacy-policy), Data safety form, Content rating.
-5. Account deletion: app-e (Settings) ache + Play Console-e URL dite hobe.
-6. Notun personal account hole: 20 tester x 14 din closed testing, tarpor Production.
-7. Update: android/app/build.gradle e versionCode +1.
-
-## Notes
-- Web-e UI change korle ei repo-te-o copy korte hobe (alada repo).
-- Kono secret (.env, keystore, google-services.json, serviceAccount) commit korben na.
+## Backend CORS
+Native app browser na, tai CORS lage na.
