@@ -27,7 +27,7 @@ import com.bloodbridge.app.ui.AppViewModel
 import com.bloodbridge.app.ui.ErrorBanner
 
 @Composable
-fun AlertsTab(vm: AppViewModel) {
+fun AlertsTab(vm: AppViewModel, onOpenRequests: () -> Unit = {}) {
     LaunchedEffect(Unit) { vm.loadNotifications() }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -51,7 +51,10 @@ fun AlertsTab(vm: AppViewModel) {
                 colors = CardDefaults.cardColors(
                     containerColor = if (n.isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer,
                 ),
-                modifier = Modifier.fillMaxWidth().clickable(enabled = !n.isRead) { vm.markRead(n.id) },
+                modifier = Modifier.fillMaxWidth().clickable {
+                    if (!n.isRead) vm.markRead(n.id)
+                    if (n.relatedRequestId != null) onOpenRequests()
+                },
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(n.message, style = MaterialTheme.typography.bodyMedium, fontWeight = if (n.isRead) FontWeight.Normal else FontWeight.SemiBold)

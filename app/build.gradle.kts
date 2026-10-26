@@ -20,6 +20,9 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"$apiBase\"")
         val cloudName = (project.findProperty("CLOUDINARY_CLOUD_NAME") as String?) ?: ""
         val uploadPreset = (project.findProperty("CLOUDINARY_UPLOAD_PRESET") as String?) ?: ""
+        val webBase = ((project.findProperty("WEB_BASE_URL") as String?) ?: "https://blood-bridge.pages.dev").trimEnd('/')
+        buildConfigField("String", "PRIVACY_URL", "\"$webBase/privacy-policy\"")
+        buildConfigField("String", "TERMS_URL", "\"$webBase/terms-of-service\"")
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"$cloudName\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"$uploadPreset\"")
     }

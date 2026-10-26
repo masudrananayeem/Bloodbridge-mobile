@@ -100,6 +100,30 @@ interface BloodBridgeApi {
         @Query("search") search: String?,
     ): OrganizationsResponse
 
+    @GET("users/saved-donors")
+    suspend fun savedDonors(): DonorsResponse
+
+    @PATCH("users/saved-donors/{id}")
+    suspend fun toggleSaved(@Path("id") id: String): SavedToggleResponse
+
+    @PATCH("users/mode")
+    suspend fun setMode(@Body body: ModeBody): ModeResponse
+
+    @GET("admin/analytics")
+    suspend fun adminAnalytics(): AnalyticsResponse
+
+    @POST("organizations")
+    suspend fun createOrg(@Body body: OrgBody): OkResponse
+
+    @PUT("organizations/{id}")
+    suspend fun updateOrg(@Path("id") id: String, @Body body: OrgBody): OkResponse
+
+    @PATCH("organizations/{id}/verify")
+    suspend fun verifyOrg(@Path("id") id: String): OkResponse
+
+    @DELETE("organizations/{id}")
+    suspend fun deleteOrg(@Path("id") id: String): OkResponse
+
     @GET("notifications")
     suspend fun notifications(): NotificationsResponse
 

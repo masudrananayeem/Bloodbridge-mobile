@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +52,8 @@ fun SearchTab(vm: AppViewModel) {
     var nearMe by rememberSaveable { mutableStateOf(true) }
     var target by remember { mutableStateOf<Donor?>(null) }
     var showEmergency by remember { mutableStateOf(false) }
+    var savedOnly by rememberSaveable { mutableStateOf(false) }
+    var visible by rememberSaveable { mutableStateOf(24) }
 
     target?.let { donor ->
         RequestDialog(
@@ -94,31 +97,48 @@ fun SearchTab(vm: AppViewModel) {
                     Text(t("Near me first"), modifier = Modifier.weight(1f))
                     Switch(checked = nearMe, onCheckedChange = { nearMe = it })
                 }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Text(t("Show saved donors only"), modifier = Modifier.weight(1f))
+                    Switch(checked = savedOnly, onCheckedChange = { savedOnly = it; if (it) vm.loadSavedDonors() })
+                }
                 if (target == null && !showEmergency) ErrorBanner(vm.error)
-                PrimaryButton(t("Search"), vm.busy, { vm.search(bloodGroup, district, nearMe) })
+                PrimaryButton(t("Search"), vm.busy, { savedOnly = false; visible = 24; vm.search(bloodGroup, district, nearMe) })
                 Button(onClick = { vm.clearError(); showEmergency = true }, modifier = Modifier.fillMaxWidth().height(46.dp)) {
                     Text(t("🚨 Emergency request (nearest 5 donors)"))
                 }
             }
         }
 
-        if (vm.searched && vm.donors.isEmpty() && !vm.busy) {
+        val shown = if (savedOnly) vm.savedDonors else vm.donors
+        if ((savedOnly || vm.searched) && shown.isEmpty() && !vm.busy) {
             item {
                 Text(
-                    t("No available donors match these filters."),
+                    if (savedOnly) t("You haven't saved any donors yet.") else t("No available donors match these filters."),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 24.dp),
                 )
             }
         }
 
-        items(vm.donors, key = { it.id }) { donor -> DonorCard(donor, onRequest = { vm.clearError(); target = donor }) }
+        items(shown.take(visible), key = { it.id }) { donor ->
+            DonorCard(
+                donor = donor,
+                saved = vm.user?.savedDonors?.contains(donor.id) == true,
+                onToggleSave = { vm.toggleSaved(donor) },
+                onRequest = { vm.clearError(); target = donor },
+            )
+        }
+        if (shown.size > visible) {
+            item {
+                OutlinedButton(onClick = { visible += 24 }, modifier = Modifier.fillMaxWidth()) { Text(t("Show more")) }
+            }
+        }
         item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
 @Composable
-private fun DonorCard(donor: Donor, onRequest: () -> Unit) {
+private fun DonorCard(donor: Donor, saved: Boolean, onToggleSave: () -> Unit, onRequest: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -146,7 +166,10 @@ private fun DonorCard(donor: Donor, onRequest: () -> Unit) {
                     if (extra.isNotBlank()) Text(extra, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text(t("Request blood")) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = onRequest, modifier = Modifier.weight(1f)) { Text(t("Request blood")) }
+                OutlinedButton(onClick = onToggleSave) { Text(if (saved) "♥ " + t("Saved") else "♡ " + t("Save")) }
+            }
         }
     }
 }

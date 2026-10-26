@@ -44,7 +44,7 @@ private fun statusColor(status: String): Color = when (status) {
 
 @Composable
 fun RequestsTab(vm: AppViewModel) {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var tab by rememberSaveable { mutableIntStateOf(if (vm.user?.activeMode == "donor") 1 else 0) }
     LaunchedEffect(Unit) { vm.loadRequests() }
     val titles = listOf(t("My requests"), "${t("Incoming")} (${vm.incoming.size})", t("Nearby"))
 

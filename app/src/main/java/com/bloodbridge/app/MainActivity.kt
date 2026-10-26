@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         com.bloodbridge.app.i18n.Lang.init(this)
+        com.bloodbridge.app.ui.ThemePref.init(this)
         setContent {
             BloodBridgeTheme {
                 Surface(modifier = Modifier.fillMaxSize()) { Root() }

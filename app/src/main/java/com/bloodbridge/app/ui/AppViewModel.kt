@@ -12,7 +12,9 @@ import com.bloodbridge.app.data.AppNotification
 import com.bloodbridge.app.data.BloodRequest
 import com.bloodbridge.app.data.CreateRequestBody
 import com.bloodbridge.app.data.Donation
+import com.bloodbridge.app.data.AnalyticsResponse
 import com.bloodbridge.app.data.Organization
+import com.bloodbridge.app.data.OrgBody
 import com.bloodbridge.app.data.UpdateProfileBody
 import android.content.Context
 import android.net.Uri
@@ -63,6 +65,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var organizations by mutableStateOf<List<Organization>>(emptyList())
         private set
 
+    var savedDonors by mutableStateOf<List<Donor>>(emptyList())
+        private set
+    var emailVerified by mutableStateOf(true)
+        private set
+    var analytics by mutableStateOf(AnalyticsResponse())
+        private set
+
     // ---- admin ----
     var adminStats by mutableStateOf(AdminStats())
         private set
@@ -78,6 +87,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             user = repo.restore()
+            emailVerified = repo.isEmailVerified()
             booting = false
         }
     }
@@ -87,7 +97,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) { error = t("Enter email and password."); return }
         info = null
-        launchBusy { user = repo.login(email, password) }
+        launchBusy { user = repo.login(email, password); emailVerified = repo.isEmailVerified() }
     }
 
     fun register(
@@ -104,6 +114,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dateOfBirth) -> error = t("Date of birth must be YYYY-MM-DD.")
             else -> launchBusy {
                 user = repo.register(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
+                emailVerified = repo.isEmailVerified()
             }
         }
     }
@@ -235,9 +246,79 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun loadSavedDonors() {
+        launchBusy { savedDonors = repo.savedDonors() }
+    }
+
+    fun toggleSaved(donor: Donor) {
+        viewModelScope.launch {
+            try {
+                val res = repo.toggleSaved(donor.id)
+                user = user?.copy(savedDonors = res.savedDonors)
+                if (!res.saved) savedDonors = savedDonors.filter { it.id != donor.id }
+            } catch (e: Exception) {
+                error = e.friendlyMessage()
+            }
+        }
+    }
+
+    fun setMode(mode: String) {
+        if (user?.activeMode == mode) return
+        launchBusy {
+            repo.setMode(mode)
+            user = user?.copy(activeMode = mode)
+        }
+    }
+
+    fun checkEmailVerified() {
+        launchBusy {
+            emailVerified = repo.reloadEmailVerified()
+            if (!emailVerified) info = t("Your email is not verified yet.")
+        }
+    }
+
+    fun resendVerification() {
+        launchBusy {
+            repo.resendVerification()
+            info = t("Verification email sent.")
+        }
+    }
+
+    fun loadAnalytics() {
+        launchBusy { analytics = repo.adminAnalytics() }
+    }
+
+    fun loadAdminOrgs() {
+        launchBusy { organizations = repo.organizations(null, null, null) }
+    }
+
+    fun saveOrg(id: String?, body: OrgBody, onDone: () -> Unit) {
+        launchBusy {
+            repo.saveOrg(id, body)
+            organizations = repo.organizations(null, null, null)
+            info = t("Organization saved.")
+            onDone()
+        }
+    }
+
+    fun verifyOrg(id: String) {
+        launchBusy {
+            repo.verifyOrg(id)
+            organizations = repo.organizations(null, null, null)
+        }
+    }
+
+    fun deleteOrg(id: String) {
+        launchBusy {
+            repo.deleteOrg(id)
+            organizations = repo.organizations(null, null, null)
+            info = t("Organization deleted.")
+        }
+    }
+
     fun googleLogin(context: Context) {
         info = null
-        launchBusy { user = repo.googleLogin(context) }
+        launchBusy { user = repo.googleLogin(context); emailVerified = true }
     }
 
     fun completeProfile(phone: String, bloodGroup: String, district: String, upazila: String, address: String, dob: String) {
@@ -305,7 +386,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         user = null
         donors = emptyList()
         searched = false
-        adminUsers = emptyList(); adminRequests = emptyList()
+        adminUsers = emptyList(); adminRequests = emptyList(); savedDonors = emptyList()
         myRequests = emptyList(); incoming = emptyList(); nearby = emptyList()
         notifications = emptyList(); unreadCount = 0; history = emptyList()
     }

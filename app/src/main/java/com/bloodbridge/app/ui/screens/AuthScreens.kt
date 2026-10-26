@@ -3,6 +3,7 @@ package com.bloodbridge.app.ui.screens
 import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -72,8 +73,11 @@ fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        LanguageToggle()
-        Spacer(Modifier.height(24.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            com.bloodbridge.app.ui.ThemeToggle()
+            LanguageToggle()
+        }
+        Spacer(Modifier.height(16.dp))
         Text("BloodBridge", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.ExtraBold, color = Brand)
         Text(t("Welcome back"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Text(t("Log in to continue saving lives."), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -95,6 +99,7 @@ fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
         TextButton(onClick = { vm.clearError(); onGoRegister() }, modifier = Modifier.fillMaxWidth()) {
             Text(t("Don't have an account? Register"))
         }
+        com.bloodbridge.app.ui.LegalLinks()
     }
 }
 

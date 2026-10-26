@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,6 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bloodbridge.app.data.BloodRequest
+import com.bloodbridge.app.data.Organization
+import com.bloodbridge.app.data.OrgBody
+import com.bloodbridge.app.ui.ThemeToggle
 import com.bloodbridge.app.data.Constants
 import com.bloodbridge.app.data.User
 import com.bloodbridge.app.data.shortDate
@@ -49,7 +54,7 @@ import com.bloodbridge.app.ui.DropdownField
 import com.bloodbridge.app.ui.ErrorBanner
 import com.bloodbridge.app.ui.LanguageToggle
 
-private val adminTabs = listOf("Overview" to "📊", "Users" to "👥", "Requests" to "🩸", "Profile" to "👤")
+private val adminTabs = listOf("Overview" to "📊", "Users" to "👥", "Requests" to "🩸", "Orgs" to "🏥", "Profile" to "👤")
 
 @Composable
 fun AdminShell(vm: AppViewModel) {
@@ -79,6 +84,7 @@ fun AdminShell(vm: AppViewModel) {
                 0 -> AdminOverview(vm)
                 1 -> AdminUsers(vm)
                 2 -> AdminRequests(vm)
+                3 -> AdminOrgs(vm)
                 else -> AdminAccount(vm)
             }
         }
@@ -102,7 +108,7 @@ private fun StatCard(title: String, value: Int, modifier: Modifier = Modifier) {
 
 @Composable
 private fun AdminOverview(vm: AppViewModel) {
-    LaunchedEffect(Unit) { vm.loadAdminStats() }
+    LaunchedEffect(Unit) { vm.loadAdminStats(); vm.loadAnalytics() }
     val s = vm.adminStats
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -123,7 +129,112 @@ private fun AdminOverview(vm: AppViewModel) {
             StatCard(t("Organizations count"), s.totalOrganizations, Modifier.weight(1f))
         }
         StatCard(t("Incomplete profiles"), s.incompleteProfiles, Modifier.fillMaxWidth())
+        BarSection(t("Blood group distribution"), vm.analytics.bloodGroupDistribution.map { it.bloodGroup to it.count })
+        BarSection(t("Request status"), vm.analytics.requestStatusBreakdown.map { lbl(it.status) to it.count })
     }
+}
+
+@Composable
+private fun BarSection(title: String, rows: List<Pair<String, Int>>) {
+    if (rows.isEmpty()) return
+    val max = (rows.maxOf { it.second }).coerceAtLeast(1)
+    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, fontWeight = FontWeight.SemiBold)
+            rows.forEach { (label, n) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, modifier = Modifier.width(84.dp), style = MaterialTheme.typography.bodySmall)
+                    Box(Modifier.weight(1f).height(10.dp)) {
+                        Box(Modifier.fillMaxWidth(n.toFloat() / max).height(10.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(5.dp)))
+                    }
+                    Text(n.toString(), modifier = Modifier.padding(start = 8.dp), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminOrgs(vm: AppViewModel) {
+    LaunchedEffect(Unit) { vm.loadAdminOrgs() }
+    var editing by remember { mutableStateOf<Organization?>(null) }
+    var creating by remember { mutableStateOf(false) }
+    var toDelete by remember { mutableStateOf<Organization?>(null) }
+    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(t("Organizations"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Button(onClick = { creating = true }) { Text("+ " + t("Add")) }
+            }
+            ErrorBanner(vm.error)
+        }
+        items(vm.organizations, key = { it.id }) { o ->
+            Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(o.name + if (o.isVerified) "  ✓" else "", fontWeight = FontWeight.SemiBold)
+                    Text(lbl(o.type) + " · " + lbl(o.district), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(o.phone, style = MaterialTheme.typography.bodySmall)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (!o.isVerified) TextButton(onClick = { vm.verifyOrg(o.id) }, enabled = !vm.busy) { Text(t("Verify")) }
+                        TextButton(onClick = { editing = o }) { Text(t("Edit")) }
+                        TextButton(onClick = { toDelete = o }) { Text(t("Delete")) }
+                    }
+                }
+            }
+        }
+    }
+    if (creating || editing != null) {
+        OrgDialog(vm, editing, onDismiss = { creating = false; editing = null })
+    }
+    toDelete?.let { o ->
+        AlertDialog(
+            onDismissRequest = { toDelete = null },
+            title = { Text(t("Delete")) },
+            text = { Text(o.name) },
+            confirmButton = { TextButton(onClick = { vm.deleteOrg(o.id); toDelete = null }) { Text(t("Delete")) } },
+            dismissButton = { TextButton(onClick = { toDelete = null }) { Text(t("Cancel")) } },
+        )
+    }
+}
+
+@Composable
+private fun OrgDialog(vm: AppViewModel, org: Organization?, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(org?.name.orEmpty()) }
+    var type by remember { mutableStateOf(org?.type?.ifBlank { null } ?: Constants.orgTypes.first()) }
+    var district by remember { mutableStateOf(org?.district.orEmpty()) }
+    var upazila by remember { mutableStateOf(org?.upazila.orEmpty()) }
+    var address by remember { mutableStateOf(org?.address.orEmpty()) }
+    var phone by remember { mutableStateOf(org?.phone.orEmpty()) }
+    var email by remember { mutableStateOf(org?.email.orEmpty()) }
+    var website by remember { mutableStateOf(org?.website.orEmpty()) }
+    var description by remember { mutableStateOf(org?.description.orEmpty()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (org == null) t("Add organization") else t("Edit organization")) },
+        text = {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                item { ErrorBanner(vm.error) }
+                item { AppTextField(name, { name = it }, t("Name")) }
+                item { DropdownField(t("Type"), type, Constants.orgTypes, { type = it }) }
+                item { DropdownField(t("District"), district, Constants.districts, { district = it }) }
+                item { AppTextField(upazila, { upazila = it }, t("Upazila")) }
+                item { AppTextField(address, { address = it }, t("Address")) }
+                item { AppTextField(phone, { phone = it }, t("Phone")) }
+                item { AppTextField(email, { email = it }, t("Email")) }
+                item { AppTextField(website, { website = it }, t("Website")) }
+                item { AppTextField(description, { description = it }, t("Description")) }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !vm.busy,
+                onClick = {
+                    vm.saveOrg(org?.id, OrgBody(name.trim(), type, description.trim(), district, upazila.trim(), address.trim(), phone.trim(), email.trim(), website.trim()), onDismiss)
+                },
+            ) { Text(t("Save")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(t("Cancel")) } },
+    )
 }
 
 @Composable
@@ -240,6 +351,10 @@ private fun AdminAccount(vm: AppViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(t("Language"), modifier = Modifier.padding(end = 8.dp))
             LanguageToggle()
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(t("Theme"), modifier = Modifier.padding(end = 8.dp))
+            ThemeToggle()
         }
         OutlinedButton(onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth()) { Text(t("Log out")) }
     }

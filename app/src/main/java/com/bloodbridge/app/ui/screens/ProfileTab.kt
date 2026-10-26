@@ -116,6 +116,11 @@ fun ProfileTab(vm: AppViewModel) {
             Text(t("Language"), modifier = Modifier.padding(end = 8.dp))
             LanguageToggle()
         }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(t("Theme"), modifier = Modifier.padding(end = 8.dp))
+            com.bloodbridge.app.ui.ThemeToggle()
+        }
+        com.bloodbridge.app.ui.LegalLinks()
         Box(Modifier.height(8.dp))
         OutlinedButton(onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth()) { Text(t("Log out")) }
         TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {

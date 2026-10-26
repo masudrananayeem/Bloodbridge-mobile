@@ -1,6 +1,10 @@
 package com.bloodbridge.app.ui
 
+import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -21,7 +25,27 @@ private val Dark = darkColorScheme(
     background = Color(0xFF0F1117), surface = Color(0xFF181B23),
 )
 
+/** In-app theme choice: "system" | "light" | "dark" (persisted). */
+object ThemePref {
+    var mode by mutableStateOf("system")
+        private set
+
+    fun init(context: Context) {
+        mode = context.getSharedPreferences("bloodbridge", Context.MODE_PRIVATE).getString("theme", "system") ?: "system"
+    }
+
+    fun cycle(context: Context) {
+        mode = when (mode) { "system" -> "light"; "light" -> "dark"; else -> "system" }
+        context.getSharedPreferences("bloodbridge", Context.MODE_PRIVATE).edit().putString("theme", mode).apply()
+    }
+}
+
 @Composable
 fun BloodBridgeTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, content = content)
+    val dark = when (ThemePref.mode) {
+        "dark" -> true
+        "light" -> false
+        else -> isSystemInDarkTheme()
+    }
+    MaterialTheme(colorScheme = if (dark) Dark else Light, content = content)
 }

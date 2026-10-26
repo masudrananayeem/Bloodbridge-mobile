@@ -123,3 +123,31 @@ fun LanguageToggle(modifier: Modifier = Modifier) {
         Text(if (com.bloodbridge.app.i18n.Lang.current == "bn") "English" else "বাংলা")
     }
 }
+
+@Composable
+fun ThemeToggle(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.material3.TextButton(onClick = { ThemePref.cycle(context) }, modifier = modifier) {
+        Text(
+            when (ThemePref.mode) {
+                "light" -> com.bloodbridge.app.i18n.t("Light")
+                "dark" -> com.bloodbridge.app.i18n.t("Dark")
+                else -> com.bloodbridge.app.i18n.t("System")
+            }
+        )
+    }
+}
+
+@Composable
+fun LegalLinks(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    fun open(url: String) = context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        androidx.compose.material3.TextButton(onClick = { open(com.bloodbridge.app.BuildConfig.PRIVACY_URL) }) {
+            Text(com.bloodbridge.app.i18n.t("Privacy Policy"), style = MaterialTheme.typography.bodySmall)
+        }
+        androidx.compose.material3.TextButton(onClick = { open(com.bloodbridge.app.BuildConfig.TERMS_URL) }) {
+            Text(com.bloodbridge.app.i18n.t("Terms of Service"), style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}

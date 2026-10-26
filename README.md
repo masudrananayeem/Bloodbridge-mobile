@@ -9,7 +9,8 @@ Phase 4: Bangla/English toggle (login screen + Profile), Google login + complete
   (admin role-er account login korle automatic AdminShell: Overview stats, Users verify/delete/search/load-more, Requests status).
   Google login: Firebase Console > Authentication > Google enabled; Project settings > Android app e SHA-1 (+ SHA-256) add
   kore google-services.json abar download kore app/ e rakhun. (debug SHA-1: ./gradlew signingReport)
-Phase 5 (baki): feedback form (feedback API-er path/body dorkar), push notification, polish.
+Phase 5: Donor/Seeker mode switch (mode-wise tabs), email verification banner, saved donors, show more, organizations CRUD + analytics (admin), theme toggle, alert tap -> Requests.
+Baki: feedback form (feedback API-er path/body dorkar), push notification (FCM + backend change), seeker contact after accept.
 
 ## Run (VS Code-e code dekhben, build Android Studio-te)
 1. Android Studio install (developer.android.com/studio). File > Open > ei folder.
