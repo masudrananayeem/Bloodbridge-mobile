@@ -49,6 +49,7 @@ data class RegisterBody(
     val district: String,
     val upazila: String,
     val address: String,
+    val photoURL: String? = null,
 )
 
 @Serializable
@@ -190,6 +191,7 @@ data class UserResponse(val success: Boolean = true, val user: User = User())
 data class Organization(
     val id: String = "",
     val name: String = "",
+    val logoURL: String = "",
     val type: String = "",
     val description: String = "",
     val district: String = "",
@@ -203,6 +205,9 @@ data class Organization(
 
 @Serializable
 data class OrganizationsResponse(val success: Boolean = true, val organizations: List<Organization> = emptyList())
+
+@Serializable
+data class OrganizationResponse(val success: Boolean = true, val organization: Organization = Organization())
 
 @Serializable
 data class GoogleBody(val firebaseIdToken: String)

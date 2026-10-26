@@ -8,7 +8,6 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import com.bloodbridge.app.BuildConfig
-import com.bloodbridge.app.R
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.GoogleAuthProvider
@@ -71,7 +70,7 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
 
     suspend fun register(
         fullName: String, email: String, password: String, phone: String, bloodGroup: String,
-        gender: String, dateOfBirth: String, district: String, upazila: String, address: String,
+        gender: String, dateOfBirth: String, district: String, upazila: String, address: String, photoURL: String? = null,
     ): User {
         val cred = auth.createUserWithEmailAndPassword(email.trim(), password).await()
         val fbUser = cred.user!!
@@ -79,7 +78,7 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
         runCatching { fbUser.sendEmailVerification().await() }
         val idToken = fbUser.getIdToken(true).await().token!!
         val res = api.register(
-            RegisterBody(idToken, fullName, email.trim(), phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
+            RegisterBody(idToken, fullName, email.trim(), phone, bloodGroup, gender, dateOfBirth, district, upazila, address, photoURL)
         )
         session.token = res.token
         return res.user
@@ -99,7 +98,9 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
 
     /** Google sign-in (Credential Manager) -> Firebase -> backend /auth/google. May return profileComplete=false. */
     suspend fun googleLogin(activityContext: Context): User {
-        val option = GetSignInWithGoogleOption.Builder(activityContext.getString(R.string.default_web_client_id)).build()
+        val clientIdResource = activityContext.resources.getIdentifier("default_web_client_id", "string", activityContext.packageName)
+        require(clientIdResource != 0) { t("Google sign-in is not configured. Add Firebase google-services.json first.") }
+        val option = GetSignInWithGoogleOption.Builder(activityContext.getString(clientIdResource)).build()
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
         val result = CredentialManager.create(activityContext).getCredential(activityContext, request)
         val credential = result.credential
@@ -145,6 +146,8 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
     suspend fun markAllRead() = api.markAllRead()
 
     suspend fun updateProfile(body: UpdateProfileBody): User = api.updateProfile(body).user
+
+    suspend fun organizationDetails(id: String) = api.organizationDetails(id).organization
 
     suspend fun organizations(district: String?, type: String?, search: String?) =
         api.organizations(

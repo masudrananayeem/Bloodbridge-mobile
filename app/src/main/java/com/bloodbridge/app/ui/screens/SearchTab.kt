@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bloodbridge.app.data.Constants
@@ -50,7 +52,7 @@ import kotlin.math.roundToInt
 fun SearchTab(vm: AppViewModel) {
     var bloodGroup by rememberSaveable { mutableStateOf("") }
     var district by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(Unit) { vm.loadRequests(); vm.loadSavedDonors() }
+    LaunchedEffect(Unit) { vm.loadSearchScreen() }
     var upazila by rememberSaveable { mutableStateOf("") }
     var nearMe by rememberSaveable { mutableStateOf(true) }
     var target by remember { mutableStateOf<Donor?>(null) }
@@ -99,7 +101,7 @@ fun SearchTab(vm: AppViewModel) {
                 DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
                 com.bloodbridge.app.ui.AppTextField(upazila, { upazila = it }, t("Upazila"))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text(t("Near me first"), modifier = Modifier.weight(1f))
+                    Text(t("Nearest first"), modifier = Modifier.weight(1f))
                     Switch(checked = nearMe, onCheckedChange = { nearMe = it })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -162,11 +164,27 @@ private fun DonorCard(donor: Donor, saved: Boolean, onToggleSave: () -> Unit, on
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (donor.photoURL.isNotBlank()) {
+                    coil.compose.AsyncImage(
+                        model = donor.photoURL,
+                        contentDescription = "${donor.fullName} profile photo",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(52.dp).clip(CircleShape),
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.size(52.dp).clip(CircleShape).background(Brand),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(donor.fullName.firstOrNull()?.uppercase() ?: "?", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Spacer(Modifier.width(10.dp))
                 Box(
-                    modifier = Modifier.clip(CircleShape).background(Brand).padding(12.dp),
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Brand).padding(horizontal = 9.dp, vertical = 7.dp),
                     contentAlignment = Alignment.Center,
                 ) { Text(donor.bloodGroup, color = Color.White, fontWeight = FontWeight.Bold) }
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         donor.fullName + if (donor.isVerified) "  ✓" else "",
@@ -179,6 +197,13 @@ private fun DonorCard(donor: Donor, saved: Boolean, onToggleSave: () -> Unit, on
                         donor.distanceKm?.let { add("${it.roundToInt()} ${t("km away")}") }
                     }.joinToString(" • ")
                     if (extra.isNotBlank()) Text(extra, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    if (donor.daysUntilEligible > 0) {
+                        Text(
+                            "${t("Eligible to donate in")} ${donor.daysUntilEligible} ${t("days")}",
+                            color = MaterialTheme.colorScheme.tertiary,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {

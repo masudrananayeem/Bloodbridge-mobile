@@ -74,6 +74,9 @@ interface BloodBridgeApi {
     @DELETE("users/me")
     suspend fun deleteMe(): OkResponse
 
+    @GET("organizations/{id}")
+    suspend fun organizationDetails(@Path("id") id: String): OrganizationResponse
+
     @GET("organizations")
     suspend fun organizations(
         @Query("district") district: String?,

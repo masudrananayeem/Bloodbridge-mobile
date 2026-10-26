@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,11 +25,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -51,9 +54,22 @@ private fun statusColor(status: String): Color = when (status) {
 @Composable
 fun RequestsTab(vm: AppViewModel) {
     var tab by rememberSaveable { mutableIntStateOf(if (vm.user?.activeMode == "donor") 1 else 0) }
-    LaunchedEffect(Unit) { vm.loadRequests() }
+    LaunchedEffect(vm.user?.activeMode) { tab = if (vm.user?.activeMode == "donor") 1 else 0; vm.loadRequests() }
     val titles = listOf(t("My requests"), "${t("Incoming")} (${vm.incoming.size})", t("Nearby"))
     var statusFilter by rememberSaveable { mutableStateOf("") }
+    var rejectTarget by remember { mutableStateOf<BloodRequest?>(null) }
+
+    rejectTarget?.let { request ->
+        AlertDialog(
+            onDismissRequest = { rejectTarget = null },
+            title = { Text(t("Decline this request?")) },
+            text = { Text(t("The seeker will be notified that you declined the request.")) },
+            confirmButton = {
+                TextButton(enabled = !vm.busy, onClick = { vm.respond(request.id, "reject"); rejectTarget = null }) { Text(t("Decline")) }
+            },
+            dismissButton = { TextButton(onClick = { rejectTarget = null }) { Text(t("Keep pending")) } },
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
@@ -88,7 +104,7 @@ fun RequestsTab(vm: AppViewModel) {
                     busy = vm.busy,
                     onCancel = { vm.cancelRequest(req.id) },
                     onAccept = { vm.respond(req.id, "accept") },
-                    onReject = { vm.respond(req.id, "reject") },
+                    onReject = { rejectTarget = req },
                 )
             }
             item { Spacer(Modifier.height(24.dp)) }

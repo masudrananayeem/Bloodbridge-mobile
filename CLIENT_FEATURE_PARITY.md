@@ -1,32 +1,32 @@
 # BloodBridge Android Client Feature Audit
 
 ## Scope
-Compared the supplied React client source with the Kotlin/Jetpack Compose Android project. Admin-only pages and operations are intentionally excluded from the Android app.
+Compared the supplied React client source with the Kotlin/Jetpack Compose Android project. Admin-only pages and operations are intentionally excluded.
 
-## Present in the Android app
-- Email/password sign-in and registration, Google sign-in, password reset, email verification, and completion of Google-created profiles.
+## Client features represented in Android
+- Email/password sign-in and registration, Google sign-in, password reset, email verification, Google-created profile completion, optional registration profile photo.
 - Donor/seeker mode switching.
-- Donor search by blood group, district, and upazila; near-me-first option; saved-donor list/filter; direct requests; emergency requests.
-- Request list, incoming and nearby requests, accept/decline, cancel, status display, accepted donor contact details.
-- Donor availability, eligibility countdown, record donation, donation history and statistics.
-- Organization directory with district/type filters, phone dialer, email action, website action, and text search.
-- Profile update, profile photo upload, password reset, account deletion, logout.
-- Notifications center, unread count, mark one/all as read.
-- Bangla/English, light/dark theme, privacy policy and terms links.
-- Feedback categories and personal feedback history.
-- Added/strengthened mobile UX: app header with unread notification shortcut, clearer donor-search helper text, reset filters, server-side donor pagination, request-status filter, organization text search and organization email/website shortcuts, tap-to-call for request contacts.
+- Donor search by blood group, district, and upazila; nearest-first API option; saved donors; direct and emergency requests; pagination. Donor cards show profile photo or initials, blood group, distance/age where available, and eligibility countdown.
+- My, incoming, and nearby request lists; status filtering; accept/reject/cancel; accepted donor contact details; call shortcuts.
+- Donor availability, eligibility countdown, donation recording, donation history, and statistics.
+- Organization directory with district/type/text filters, organization details endpoint, phone dialer, email and website actions.
+- Organization directory is accessible in both donor and seeker modes (seeker navigation gap corrected in this update).
+- Profile editing, profile photo upload, password reset, account deletion, and logout.
+- In-app notifications, unread count, mark-one/all-as-read; feedback categories and personal feedback history.
+- Bangla/English, light/dark theme, privacy policy and terms of service.
+- User-experience improvements: bottom navigation, mode-specific navigation, loading/error/empty states, resettable donor filters, organization search debounce, request status filter, and contact shortcuts.
 
-## Gaps / items requiring follow-up
-1. **Push notifications (FCM): not implemented.** The in-app notifications screen works through the API, but the app does not register an FCM token or receive push messages.
-2. **Geolocation permission / GPS-based nearby sorting:** the app sends the API's `nearMe` filter, but it does not request Android location permission or pass live coordinates. Confirm whether the backend's nearMe behavior uses profile location; true GPS proximity needs explicit location integration.
-3. **Organization details:** the web client has a `GET /organizations/:id` service, while the app shows organization details directly on list cards and does not call the detail endpoint. Contact shortcuts are included.
-4. **Landing/marketing pages:** the website's public landing page, testimonials, FAQ, and marketing sections are not reproduced in the native app. The app starts at login/register; add an onboarding/landing screen only if you want website marketing content in mobile too.
-5. **Build verification:** not verified in this environment because Gradle and the Gradle wrapper are unavailable and `google-services.json` is not included. Run Gradle sync/build in Android Studio after adding Firebase configuration and setting API/cloud configuration.
+## Clarifications / remaining work
+1. **Push notifications (FCM):** the supplied web client implements an in-app notifications center using `/notifications`; it does not register an FCM token or implement browser push. FCM is therefore not required for parity with the supplied client, but it would be a separate enhancement requiring backend token registration and sending logic.
+2. **Near-me behavior:** the supplied web client sends `nearMe=true` and describes results as nearest-first using the seeker's current/profile address. The Android app matches that API contract. It does not request live GPS coordinates; do not describe this as GPS proximity. A GPS-based feature would require runtime permission, coordinate query parameters, and backend support.
+3. **Website marketing pages:** the website's landing page, testimonials, FAQ, and marketing sections are not reproduced in the native app; app users start at login/register. Core authenticated donor/seeker workflows are the focus.
+4. **Build verification:** Gradle is unavailable in this environment and internet access to download it is blocked, so a real Android compile could not be run here. `google-services.json` is intentionally not included. Add Firebase configuration and set API/Cloudinary properties before runtime testing.
 
-## Backend compatibility checks needed
-- Ensure the donor-search endpoint accepts `page` and `limit` and returns `donors`, `pages`, and `total` as the supplied web client expects.
-- Confirm all Android API paths/payloads match the deployed backend version.
-- Keep `API_BASE_URL` pointed at HTTPS in production; the default emulator URL is for local development only.
+## Backend compatibility checks
+- Donor search expects `page`, `limit` query parameters and a response with `donors`, `pages`, and `total`, as used by the supplied web client.
+- Organization detail uses `GET /organizations/:id`, matching the supplied web service.
+- The API base URL must be HTTPS in production and end with `/api/`.
+- Profile photo upload requires Cloudinary cloud name and unsigned upload preset; Firebase authentication requires a valid `google-services.json` and enabled sign-in providers.
 
 ## Admin scope
 No admin dashboard or admin CRUD features are included in the Android client app.

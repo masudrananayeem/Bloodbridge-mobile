@@ -46,10 +46,12 @@ private val allTabs = mapOf(
 fun MainShell(vm: AppViewModel) {
     val mode = vm.user?.activeMode ?: "donor"
     // Same idea as the web app: donor mode and seeker mode show different tabs.
-    val tabIds = if (mode == "donor") listOf("requests", "donor", "orgs", "alerts", "profile") else listOf("find", "requests", "alerts", "profile")
+    val tabIds = if (mode == "donor") listOf("requests", "donor", "orgs", "alerts", "profile") else listOf("find", "requests", "orgs", "alerts", "profile")
     var selected by rememberSaveable { mutableStateOf("requests") }
     val current = if (selected in tabIds) selected else tabIds.first()
     val snackbar = remember { SnackbarHostState() }
+
+    LaunchedEffect(vm.user?.id) { if (vm.user != null) vm.loadNotifications() }
 
     LaunchedEffect(vm.info) {
         vm.info?.let {

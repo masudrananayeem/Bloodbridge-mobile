@@ -68,6 +68,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     var organizations by mutableStateOf<List<Organization>>(emptyList())
         private set
+    var selectedOrganization by mutableStateOf<Organization?>(null)
+        private set
 
     var savedDonors by mutableStateOf<List<Donor>>(emptyList())
         private set
@@ -94,7 +96,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun register(
         fullName: String, email: String, password: String, confirm: String, phone: String,
-        bloodGroup: String, gender: String, dateOfBirth: String, district: String, upazila: String, address: String,
+        bloodGroup: String, gender: String, dateOfBirth: String, district: String, upazila: String, address: String, photoUri: Uri? = null,
     ) {
         val missing = listOf(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
             .any { it.isBlank() }
@@ -105,9 +107,30 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             !Regex("^01[3-9]\\d{8}$").matches(phone) -> error = t("Enter a valid Bangladeshi phone number (01XXXXXXXXX).")
             !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dateOfBirth) -> error = t("Date of birth must be YYYY-MM-DD.")
             else -> launchBusy {
-                user = repo.register(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
+                val photoUrl = photoUri?.let { uri ->
+                    val bytes = withContext(Dispatchers.IO) {
+                        getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    } ?: throw IllegalStateException(t("Could not read the selected image."))
+                    repo.uploadPhoto(bytes)
+                }
+                user = repo.register(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address, photoUrl)
                 emailVerified = repo.isEmailVerified()
             }
+        }
+    }
+
+    fun loadSearchScreen() {
+        launchBusy {
+            myRequests = repo.myRequests()
+            incoming = repo.incoming()
+            nearby = repo.nearby()
+            savedDonors = repo.savedDonors()
+            val result = repo.searchDonors(null, null, null, true, 1, 24)
+            donors = result.donors
+            donorPage = 1
+            donorPages = result.pages.coerceAtLeast(1)
+            donorTotal = result.total
+            searched = true
         }
     }
 
@@ -226,6 +249,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         launchBusy { organizations = repo.organizations(district, type, search) }
     }
 
+    fun openOrganization(organization: Organization) {
+        selectedOrganization = organization
+        if (organization.id.isNotBlank()) {
+            launchBusy { selectedOrganization = repo.organizationDetails(organization.id) }
+        }
+    }
+
+    fun closeOrganization() { selectedOrganization = null }
+
     fun loadFeedback() {
         launchBusy { feedback = repo.myFeedback() }
     }
@@ -302,16 +334,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         launchBusy { user = repo.googleLogin(context); emailVerified = true }
     }
 
-    fun completeProfile(phone: String, bloodGroup: String, district: String, upazila: String, address: String, dob: String) {
+    fun completeProfile(fullName: String, phone: String, bloodGroup: String, district: String, upazila: String, address: String, dob: String) {
         when {
-            listOf(phone, bloodGroup, district, upazila, address).any { it.isBlank() } -> error = t("Please fill in all fields.")
+            listOf(fullName, phone, bloodGroup, district, upazila, address, dob).any { it.isBlank() } -> error = t("Please fill in all fields.")
             !Regex("^01[3-9]\\d{8}$").matches(phone) -> error = t("Enter a valid Bangladeshi phone number (01XXXXXXXXX).")
-            dob.isNotBlank() && !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dob) -> error = t("Date of birth must be YYYY-MM-DD.")
+            !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dob) -> error = t("Date of birth must be YYYY-MM-DD.")
             else -> launchBusy {
                 user = repo.updateProfile(
                     UpdateProfileBody(
-                        phone = phone, bloodGroup = bloodGroup, district = district, upazila = upazila.trim(),
-                        address = address.trim(), dateOfBirth = dob.ifBlank { null },
+                        fullName = fullName.trim(), phone = phone, bloodGroup = bloodGroup, district = district, upazila = upazila.trim(),
+                        address = address.trim(), dateOfBirth = dob,
                     )
                 )
             }
