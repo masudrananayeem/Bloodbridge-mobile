@@ -10,7 +10,7 @@ Phase 4: Bangla/English toggle (login screen + Profile), Google login + complete
   Google login: Firebase Console > Authentication > Google enabled; Project settings > Android app e SHA-1 (+ SHA-256) add
   kore google-services.json abar download kore app/ e rakhun. (debug SHA-1: ./gradlew signingReport)
 Phase 5: Donor/Seeker mode switch (mode-wise tabs), email verification banner, saved donors, show more, organizations CRUD + analytics (admin), theme toggle, alert tap -> Requests.
-Privacy Policy + Terms ekhon app-er bhitore (offline, Bangla/English). Baki: push notification (FCM + backend change).
+Phase 5b audit fixes: seeker phone + direct badge (incoming), accepted donor email, emergency reason, upazila filter, DOB + age, password reset + DELETE confirm, overview stats, Organizations tab in donor mode, alert icons. Privacy/Terms in-app. Baki: push notification (FCM + backend).
 
 ## Run (VS Code-e code dekhben, build Android Studio-te)
 1. Android Studio install (developer.android.com/studio). File > Open > ei folder.

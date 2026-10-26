@@ -85,10 +85,11 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
         return res.user
     }
 
-    suspend fun searchDonors(bloodGroup: String?, district: String?, nearMe: Boolean): List<Donor> =
+    suspend fun searchDonors(bloodGroup: String?, district: String?, upazila: String?, nearMe: Boolean): List<Donor> =
         api.searchDonors(
             bloodGroup?.takeIf { it.isNotBlank() },
             district?.takeIf { it.isNotBlank() },
+            upazila?.takeIf { it.isNotBlank() },
             if (nearMe) true else null,
         ).donors
 

@@ -27,3 +27,9 @@ fun nextEligibleLabel(lastDonationDate: String?): String? {
 }
 
 fun shortDate(iso: String?): String = iso?.take(10).orEmpty()
+
+/** Age in whole years from an ISO date (yyyy-MM-dd...), or null. */
+fun ageFromDob(iso: String?): Int? = runCatching {
+    val dob = java.time.LocalDate.parse(iso!!.take(10))
+    java.time.Period.between(dob, java.time.LocalDate.now()).years.takeIf { it in 0..120 }
+}.getOrNull()

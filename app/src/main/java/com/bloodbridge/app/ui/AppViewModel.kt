@@ -119,9 +119,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun search(bloodGroup: String, district: String, nearMe: Boolean) {
+    fun search(bloodGroup: String, district: String, upazila: String, nearMe: Boolean) {
         launchBusy {
-            donors = repo.searchDonors(bloodGroup, district, nearMe)
+            donors = repo.searchDonors(bloodGroup, district, upazila, nearMe)
             searched = true
         }
     }

@@ -56,9 +56,13 @@ fun AlertsTab(vm: AppViewModel, onOpenRequests: () -> Unit = {}) {
                     if (n.relatedRequestId != null) onOpenRequests()
                 },
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+                    val icon = when (n.type) { "accepted" -> "✅"; "rejected" -> "❌"; "verified" -> "🛡"; "filled" -> "🚫"; else -> "🔔" }
+                    Text(icon, modifier = Modifier.padding(end = 10.dp))
+                Column {
                     Text(n.message, style = MaterialTheme.typography.bodyMedium, fontWeight = if (n.isRead) FontWeight.Normal else FontWeight.SemiBold)
                     Text(shortDate(n.createdAt), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
                 }
             }
         }

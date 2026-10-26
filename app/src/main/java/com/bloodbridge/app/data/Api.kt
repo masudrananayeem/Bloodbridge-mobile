@@ -57,6 +57,7 @@ interface BloodBridgeApi {
     suspend fun searchDonors(
         @Query("bloodGroup") bloodGroup: String?,
         @Query("district") district: String?,
+        @Query("upazila") upazila: String?,
         @Query("nearMe") nearMe: Boolean?,
     ): DonorsResponse
 

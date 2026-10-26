@@ -38,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.bloodbridge.app.data.Constants
+import com.bloodbridge.app.data.ageFromDob
 import com.bloodbridge.app.data.UpdateProfileBody
 import com.bloodbridge.app.ui.AppTextField
 import com.bloodbridge.app.ui.AppViewModel
@@ -54,7 +55,10 @@ fun ProfileTab(vm: AppViewModel) {
     var district by remember(u?.id) { mutableStateOf(u?.district.orEmpty()) }
     var upazila by remember(u?.id) { mutableStateOf(u?.upazila.orEmpty()) }
     var address by remember(u?.id) { mutableStateOf(u?.address.orEmpty()) }
+    var dob by remember(u?.id) { mutableStateOf(u?.dateOfBirth?.take(10).orEmpty()) }
+    var localError by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var deleteText by remember { mutableStateOf("") }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) vm.uploadPhoto(uri)
@@ -64,13 +68,19 @@ fun ProfileTab(vm: AppViewModel) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(t("Delete account?")) },
-            text = { Text(t("This permanently deletes your profile, requests and history. This cannot be undone.")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(t("This permanently deletes your profile, requests and history. This cannot be undone."))
+                    Text(t("Type DELETE to confirm") + ": DELETE")
+                    AppTextField(deleteText, { deleteText = it }, "DELETE")
+                }
+            },
             confirmButton = {
-                TextButton(enabled = !vm.busy, onClick = { confirmDelete = false; vm.deleteAccount() }) {
+                TextButton(enabled = !vm.busy && deleteText == "DELETE", onClick = { confirmDelete = false; deleteText = ""; vm.deleteAccount() }) {
                     Text(t("Delete"), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(t("Cancel")) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false; deleteText = "" }) { Text(t("Cancel")) } },
         )
     }
 
@@ -100,18 +110,28 @@ fun ProfileTab(vm: AppViewModel) {
         AppTextField(phone, { phone = it }, t("Phone (01XXXXXXXXX)"), keyboardType = KeyboardType.Phone)
         DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it })
         DropdownField(t("District"), district, Constants.districts, { district = it })
+        AppTextField(dob, { dob = it.take(10) }, t("Date of birth"), placeholder = "YYYY-MM-DD")
+        ageFromDob(dob)?.let { Text("${t("Age")}: $it ${t("yrs")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         AppTextField(upazila, { upazila = it }, t("Upazila"))
         AppTextField(address, { address = it }, t("Present address"))
+        localError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         ErrorBanner(vm.error)
         PrimaryButton(t("Save changes"), vm.busy, {
-            vm.updateProfile(
+            localError = when {
+                address.isBlank() -> t("Present address is required.")
+                dob.isNotBlank() && ageFromDob(dob) == null -> t("Date of birth must be YYYY-MM-DD.")
+                else -> null
+            }
+            if (localError == null) vm.updateProfile(
                 UpdateProfileBody(
                     fullName = fullName.trim(), phone = phone.trim(), bloodGroup = bloodGroup,
                     district = district, upazila = upazila.trim(), address = address.trim(),
+                    dateOfBirth = dob.ifBlank { null },
                 )
             )
         })
 
+        OutlinedButton(onClick = { vm.resetPassword(u?.email.orEmpty()) {} }, enabled = !vm.busy, modifier = Modifier.fillMaxWidth()) { Text(t("Send password reset link")) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(t("Language"), modifier = Modifier.padding(end = 8.dp))
             LanguageToggle()

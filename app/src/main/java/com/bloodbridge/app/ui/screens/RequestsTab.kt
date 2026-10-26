@@ -110,16 +110,19 @@ private fun RequestCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
             )
             if (mode != 0) {
-                Text("${t("From:")} ${req.seekerName}", style = MaterialTheme.typography.bodyMedium)
+                Text("${t("From:")} ${req.seekerName}" + if (req.seekerPhone.isNotBlank()) " · ${req.seekerPhone}" else "", style = MaterialTheme.typography.bodyMedium)
+                if (!req.targetDonorUid.isNullOrBlank()) Text(t("Direct request"), color = Color(0xFF7C3AED), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
             }
+            if (req.reason.isNotBlank()) Text("${t("Reason")}: ${req.reason}", style = MaterialTheme.typography.bodySmall)
             if (req.message.isNotBlank()) Text("“${req.message}”", style = MaterialTheme.typography.bodyMedium)
             if (mode == 0 && !req.targetDonorName.isNullOrBlank()) Text("${t("To:")} ${req.targetDonorName}")
             if (mode == 0 && req.status == "accepted") {
                 Text(
-                    "${t("Accepted by")} ${req.acceptedDonorName.orEmpty()} — ${req.acceptedDonorPhone.orEmpty()}",
+                    "${t("Accepted by")} ${req.acceptedDonorName.orEmpty()} — ${req.acceptedDonorPhone.orEmpty()}" + (req.acceptedDonorEmail?.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""),
                     color = statusColor("accepted"), fontWeight = FontWeight.SemiBold,
                 )
             }
+            if (mode == 0 && req.status == "rejected") Text(t("No donor accepted this request."), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             req.distanceKm?.let { if (mode == 2) Text("${it.toInt()} ${t("km away")}", style = MaterialTheme.typography.bodySmall) }
 
             if (mode == 0 && (req.status == "pending" || req.status == "accepted")) {

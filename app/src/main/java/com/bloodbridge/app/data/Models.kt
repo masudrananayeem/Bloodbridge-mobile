@@ -20,6 +20,7 @@ data class User(
     val isVerified: Boolean = false,
     val profileComplete: Boolean = true,
     val lastDonationDate: String? = null,
+    val dateOfBirth: String? = null,
     val savedDonors: List<String> = emptyList(),
 )
 
@@ -102,6 +103,7 @@ data class BloodRequest(
     val targetDonorName: String? = null,
     val acceptedDonorName: String? = null,
     val acceptedDonorPhone: String? = null,
+    val acceptedDonorEmail: String? = null,
     val createdAt: String? = null,
     val distanceKm: Double? = null,
 )
@@ -119,6 +121,7 @@ data class CreateRequestBody(
     val urgency: String,
     val neededByDate: String,
     val message: String = "",
+    val reason: String = "",
     val targetDonorUid: String? = null,
     val isEmergency: Boolean = false,
 )

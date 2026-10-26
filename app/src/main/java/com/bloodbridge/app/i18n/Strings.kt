@@ -26,6 +26,21 @@ fun t(en: String): String = if (Lang.current == "bn") (bnStrings[en] ?: en) else
 fun lbl(value: String): String = if (Lang.current == "bn") (bnStrings[value] ?: bnDistricts[value] ?: value) else value
 
 private val bnStrings: Map<String, String> = mapOf(
+    "Reason (optional)" to "কারণ (ঐচ্ছিক)",
+    "Reason" to "কারণ",
+    "Direct request" to "সরাসরি অনুরোধ",
+    "No donor accepted this request." to "কোনো ডোনার এই অনুরোধ গ্রহণ করেননি।",
+    "Unavailable" to "অনুপলব্ধ",
+    "Available" to "উপলব্ধ",
+    "Age" to "বয়স",
+    "Present address is required." to "বর্তমান ঠিকানা আবশ্যক।",
+    "Send password reset link" to "পাসওয়ার্ড রিসেট লিংক পাঠান",
+    "Type DELETE to confirm" to "নিশ্চিত করতে লিখুন",
+    "Total donations" to "মোট রক্তদান",
+    "Last donation" to "সর্বশেষ রক্তদান",
+    "Active requests" to "চলমান অনুরোধ",
+    "Saved donors" to "সেভ করা ডোনার",
+    "Emergency requests" to "জরুরি অনুরোধ",
     "Back" to "পিছনে",
     "Last updated" to "সর্বশেষ আপডেট",
     "Privacy Policy" to "গোপনীয়তা নীতি",

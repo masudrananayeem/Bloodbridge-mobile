@@ -43,6 +43,7 @@ fun RequestDialog(
     var urgency by remember { mutableStateOf(if (emergency) "High" else "Medium") }
     var neededBy by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+    var reason by remember { mutableStateOf("") }
     var localError by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
@@ -60,6 +61,7 @@ fun RequestDialog(
                 AppTextField(units, { units = it.filter(Char::isDigit) }, t("Units (bags)"), keyboardType = KeyboardType.Number)
                 DropdownField(t("Urgency"), urgency, Constants.urgencies, { urgency = it })
                 AppTextField(neededBy, { neededBy = it }, t("Needed by"), placeholder = "YYYY-MM-DD")
+                if (emergency) AppTextField(reason, { reason = it.take(200) }, t("Reason (optional)"))
                 AppTextField(message, { message = it.take(500) }, t("Message (optional)"))
                 val shown = localError ?: error
                 if (shown != null) Text(shown, color = androidx.compose.material3.MaterialTheme.colorScheme.error)
@@ -82,7 +84,7 @@ fun RequestDialog(
                             CreateRequestBody(
                                 bloodGroup = bloodGroup, units = u, hospital = hospital.trim(), district = district,
                                 upazila = upazila.trim(), urgency = urgency, neededByDate = neededBy,
-                                message = message.trim(), targetDonorUid = targetDonorUid, isEmergency = emergency,
+                                message = message.trim(), reason = reason.trim(), targetDonorUid = targetDonorUid, isEmergency = emergency,
                             )
                         )
                     }

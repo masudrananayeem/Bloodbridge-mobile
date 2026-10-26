@@ -39,7 +39,7 @@ import com.bloodbridge.app.ui.ErrorBanner
 
 @Composable
 fun DonorTab(vm: AppViewModel) {
-    LaunchedEffect(Unit) { vm.loadDonorDashboard() }
+    LaunchedEffect(Unit) { vm.loadDonorDashboard(); vm.loadRequests() }
     val user = vm.user
     var confirming by rememberSaveable { mutableStateOf(false) }
     val daysLeft = daysUntilEligible(user?.lastDonationDate)
@@ -51,6 +51,7 @@ fun DonorTab(vm: AppViewModel) {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }
+        item { StatsRow(vm, "donor") }
         item {
             Card(
                 shape = RoundedCornerShape(16.dp),

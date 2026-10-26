@@ -25,6 +25,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,6 +50,8 @@ import kotlin.math.roundToInt
 fun SearchTab(vm: AppViewModel) {
     var bloodGroup by rememberSaveable { mutableStateOf("") }
     var district by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(Unit) { vm.loadRequests(); vm.loadSavedDonors() }
+    var upazila by rememberSaveable { mutableStateOf("") }
     var nearMe by rememberSaveable { mutableStateOf(true) }
     var target by remember { mutableStateOf<Donor?>(null) }
     var showEmergency by remember { mutableStateOf(false) }
@@ -90,9 +93,11 @@ fun SearchTab(vm: AppViewModel) {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+                StatsRow(vm, "seeker")
                 Text("${t("Hello,")} ${vm.user?.fullName?.substringBefore(' ').orEmpty()}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it }, anyLabel = t("Any"))
                 DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
+                com.bloodbridge.app.ui.AppTextField(upazila, { upazila = it }, t("Upazila"))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text(t("Near me first"), modifier = Modifier.weight(1f))
                     Switch(checked = nearMe, onCheckedChange = { nearMe = it })
@@ -102,7 +107,7 @@ fun SearchTab(vm: AppViewModel) {
                     Switch(checked = savedOnly, onCheckedChange = { savedOnly = it; if (it) vm.loadSavedDonors() })
                 }
                 if (target == null && !showEmergency) ErrorBanner(vm.error)
-                PrimaryButton(t("Search"), vm.busy, { savedOnly = false; visible = 24; vm.search(bloodGroup, district, nearMe) })
+                PrimaryButton(t("Search"), vm.busy, { savedOnly = false; visible = 24; vm.search(bloodGroup, district, upazila.trim(), nearMe) })
                 Button(onClick = { vm.clearError(); showEmergency = true }, modifier = Modifier.fillMaxWidth().height(46.dp)) {
                     Text(t("🚨 Emergency request (nearest 5 donors)"))
                 }
@@ -167,7 +172,7 @@ private fun DonorCard(donor: Donor, saved: Boolean, onToggleSave: () -> Unit, on
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = onRequest, modifier = Modifier.weight(1f)) { Text(t("Request blood")) }
+                Button(onClick = onRequest, enabled = donor.isAvailable, modifier = Modifier.weight(1f)) { Text(if (donor.isAvailable) t("Request blood") else t("Unavailable")) }
                 OutlinedButton(onClick = onToggleSave) { Text(if (saved) "♥ " + t("Saved") else "♡ " + t("Save")) }
             }
         }
