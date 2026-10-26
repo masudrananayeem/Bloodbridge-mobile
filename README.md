@@ -5,14 +5,14 @@ Phase 2: bottom tabs — Search (+ direct request, emergency request), Requests 
 Donor (availability, "I donated today", blood-level body animation, history), Alerts (notifications), Profile.
 Phase 3: profile edit + photo upload (Cloudinary), organizations directory (call button), forgot password, delete account.
   -> gradle.properties e CLOUDINARY_CLOUD_NAME ar CLOUDINARY_UPLOAD_PRESET dite hobe (web-er VITE_CLOUDINARY_* er same value).
-Phase 4: Bangla/English toggle (login screen + Profile), Google login + complete-profile step, admin panel
-  (admin role-er account login korle automatic AdminShell: Overview stats, Users verify/delete/search/load-more, Requests status).
+Phase 4: Bangla/English toggle (login screen + Profile), Google login + complete-profile step.
   Google login: Firebase Console > Authentication > Google enabled; Project settings > Android app e SHA-1 (+ SHA-256) add
   kore google-services.json abar download kore app/ e rakhun. (debug SHA-1: ./gradlew signingReport)
-Phase 5: Donor/Seeker mode switch (mode-wise tabs), email verification banner, saved donors, show more, organizations CRUD + analytics (admin), theme toggle, alert tap -> Requests.
+Phase 5: Donor/Seeker mode switch (mode-wise tabs), email verification banner, saved donors, show more, public organizations directory, theme toggle, alert tap -> Requests.
+Phase 6: Client app-er moto Profile theke feedback/bug report/feature request submit + nijer feedback history dekhano. Mobile app-e admin panel ebong admin-only endpoints rakha hoyni.
 Phase 5b audit fixes: seeker phone + direct badge (incoming), accepted donor email, emergency reason, upazila filter, DOB + age, password reset + DELETE confirm, overview stats, Organizations tab in donor mode, alert icons. Privacy/Terms in-app. Baki: push notification (FCM + backend).
 
-## Run (VS Code-e code dekhben, build Android Studio-te)
+## Client feature parity\nDetailed client-facing feature checklist: `CLIENT_FEATURE_PARITY.md`. Admin panel intentionally excluded.\n\n## Run (VS Code-e code dekhben, build Android Studio-te)
 1. Android Studio install (developer.android.com/studio). File > Open > ei folder.
 2. Firebase Console > Project settings > Add app > Android, package: com.bloodbridge.app
    - google-services.json download kore  app/google-services.json  e rakhun.

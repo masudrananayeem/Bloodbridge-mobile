@@ -42,7 +42,6 @@ private fun Root(vm: AppViewModel = viewModel()) {
     when {
         vm.booting -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         vm.user != null && vm.user?.profileComplete == false -> com.bloodbridge.app.ui.screens.CompleteProfileScreen(vm)
-        vm.user?.role == "admin" -> com.bloodbridge.app.ui.screens.AdminShell(vm)
         vm.user != null -> MainShell(vm)
         showRegister -> RegisterScreen(vm, onGoLogin = { showRegister = false })
         else -> LoginScreen(vm, onGoRegister = { showRegister = true })

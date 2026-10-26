@@ -9,16 +9,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.bloodbridge.app.data.ApiProvider
 import com.bloodbridge.app.data.AppNotification
+import com.bloodbridge.app.data.FeedbackItem
 import com.bloodbridge.app.data.BloodRequest
 import com.bloodbridge.app.data.CreateRequestBody
 import com.bloodbridge.app.data.Donation
-import com.bloodbridge.app.data.AnalyticsResponse
 import com.bloodbridge.app.data.Organization
-import com.bloodbridge.app.data.OrgBody
 import com.bloodbridge.app.data.UpdateProfileBody
 import android.content.Context
 import android.net.Uri
-import com.bloodbridge.app.data.AdminStats
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.bloodbridge.app.data.Donor
@@ -69,19 +67,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var emailVerified by mutableStateOf(true)
         private set
-    var analytics by mutableStateOf(AnalyticsResponse())
-        private set
-
-    // ---- admin ----
-    var adminStats by mutableStateOf(AdminStats())
-        private set
-    var adminUsers by mutableStateOf<List<User>>(emptyList())
-        private set
-    var adminUsersPage by mutableStateOf(1)
-        private set
-    var adminUsersPages by mutableStateOf(1)
-        private set
-    var adminRequests by mutableStateOf<List<BloodRequest>>(emptyList())
+    var feedback by mutableStateOf<List<FeedbackItem>>(emptyList())
         private set
 
     init {
@@ -230,6 +216,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         launchBusy { organizations = repo.organizations(district, type, search) }
     }
 
+    fun loadFeedback() {
+        launchBusy { feedback = repo.myFeedback() }
+    }
+
+    fun sendFeedback(category: String, message: String, onDone: () -> Unit = {}) {
+        if (message.trim().length < 5) {
+            error = t("Please enter at least 5 characters.")
+            return
+        }
+        launchBusy {
+            repo.sendFeedback(category, message.trim())
+            feedback = repo.myFeedback()
+            info = t("Feedback sent. Thank you!")
+            onDone()
+        }
+    }
+
     fun resetPassword(email: String, onDone: () -> Unit) {
         if (email.isBlank()) { error = t("Enter your email address."); return }
         launchBusy {
@@ -284,38 +287,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun loadAnalytics() {
-        launchBusy { analytics = repo.adminAnalytics() }
-    }
-
-    fun loadAdminOrgs() {
-        launchBusy { organizations = repo.organizations(null, null, null) }
-    }
-
-    fun saveOrg(id: String?, body: OrgBody, onDone: () -> Unit) {
-        launchBusy {
-            repo.saveOrg(id, body)
-            organizations = repo.organizations(null, null, null)
-            info = t("Organization saved.")
-            onDone()
-        }
-    }
-
-    fun verifyOrg(id: String) {
-        launchBusy {
-            repo.verifyOrg(id)
-            organizations = repo.organizations(null, null, null)
-        }
-    }
-
-    fun deleteOrg(id: String) {
-        launchBusy {
-            repo.deleteOrg(id)
-            organizations = repo.organizations(null, null, null)
-            info = t("Organization deleted.")
-        }
-    }
-
     fun googleLogin(context: Context) {
         info = null
         launchBusy { user = repo.googleLogin(context); emailVerified = true }
@@ -337,56 +308,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun loadAdminStats() {
-        launchBusy { adminStats = repo.adminStats() }
-    }
-
-    fun loadAdminUsers(search: String, loadMore: Boolean = false) {
-        launchBusy {
-            val page = if (loadMore) adminUsersPage + 1 else 1
-            val res = repo.adminUsers(search, page)
-            adminUsers = if (loadMore) adminUsers + res.users else res.users
-            adminUsersPage = res.page
-            adminUsersPages = res.pages
-        }
-    }
-
-    fun adminVerify(id: String, search: String) {
-        launchBusy {
-            repo.adminVerify(id)
-            val res = repo.adminUsers(search, 1)
-            adminUsers = res.users; adminUsersPage = res.page; adminUsersPages = res.pages
-            info = t("Verification updated.")
-        }
-    }
-
-    fun adminDeleteUser(id: String, search: String) {
-        launchBusy {
-            repo.adminDeleteUser(id)
-            val res = repo.adminUsers(search, 1)
-            adminUsers = res.users; adminUsersPage = res.page; adminUsersPages = res.pages
-            info = t("User deleted.")
-        }
-    }
-
-    fun loadAdminRequests(status: String) {
-        launchBusy { adminRequests = repo.adminRequests(status) }
-    }
-
-    fun adminSetStatus(id: String, status: String, filter: String) {
-        launchBusy {
-            repo.adminSetStatus(id, status)
-            adminRequests = repo.adminRequests(filter)
-            info = t("Status updated.")
-        }
-    }
-
     fun logout() {
         repo.logout()
         user = null
         donors = emptyList()
         searched = false
-        adminUsers = emptyList(); adminRequests = emptyList(); savedDonors = emptyList()
+        savedDonors = emptyList(); feedback = emptyList()
         myRequests = emptyList(); incoming = emptyList(); nearby = emptyList()
         notifications = emptyList(); unreadCount = 0; history = emptyList()
     }

@@ -141,6 +141,48 @@ fun ProfileTab(vm: AppViewModel) {
             com.bloodbridge.app.ui.ThemeToggle()
         }
         com.bloodbridge.app.ui.LegalLinks()
+
+        androidx.compose.material3.HorizontalDivider()
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Text(t("Feedback & support"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(t("Share a suggestion, report a bug, or send us a complaint."), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            DropdownField("Category", feedbackCategory, listOf("General", "Bug Report", "Feature Request", "Complaint", "Praise"), { feedbackCategory = it })
+            OutlinedTextField(
+                value = feedbackMessage,
+                onValueChange = { feedbackMessage = it },
+                label = { Text(t("Your feedback")) },
+                placeholder = { Text(t("Tell us what we can improve…")) },
+                minLines = 3,
+                maxLines = 5,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            PrimaryButton(t("Send feedback"), vm.busy, {
+                vm.sendFeedback(feedbackCategory, feedbackMessage) { feedbackMessage = "" }
+            })
+            if (vm.feedback.isNotEmpty()) {
+                Text(t("My feedback"), fontWeight = FontWeight.SemiBold)
+                vm.feedback.take(5).forEach { item ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    ) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(item.category, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                Text(t(item.status), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Text(item.message, style = MaterialTheme.typography.bodyMedium)
+                            item.createdAt?.let { Text(it.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        }
+                    }
+                }
+            }
+            ErrorBanner(vm.error)
+        }
         Box(Modifier.height(8.dp))
         OutlinedButton(onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth()) { Text(t("Log out")) }
         TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
