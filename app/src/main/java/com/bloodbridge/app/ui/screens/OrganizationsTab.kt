@@ -1,5 +1,7 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.lbl
+import com.bloodbridge.app.i18n.t
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -45,13 +47,13 @@ fun OrganizationsTab(vm: AppViewModel) {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
-                DropdownField("District", district, Constants.districts, { district = it }, anyLabel = "Any")
-                DropdownField("Type", type, Constants.orgTypes, { type = it }, anyLabel = "Any")
+                DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
+                DropdownField(t("Type"), type, Constants.orgTypes, { type = it }, anyLabel = t("Any"))
                 ErrorBanner(vm.error)
             }
         }
         if (vm.organizations.isEmpty() && !vm.busy) {
-            item { Text("No organizations found.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item { Text(t("No organizations found."), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         items(vm.organizations, key = { it.id }) { org -> OrgCard(org) }
         item { Spacer(Modifier.height(24.dp)) }
@@ -69,15 +71,15 @@ private fun OrgCard(org: Organization) {
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(org.name + if (org.isVerified) "  ✓" else "", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Text(org.type, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+            Text(lbl(org.type), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
             if (org.description.isNotBlank()) Text(org.description, style = MaterialTheme.typography.bodyMedium)
-            val place = listOf(org.address, org.upazila, org.district).filter { it.isNotBlank() }.joinToString(", ")
+            val place = listOf(org.address, org.upazila, lbl(org.district)).filter { it.isNotBlank() }.joinToString(", ")
             if (place.isNotBlank()) Text(place, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             if (org.phone.isNotBlank()) {
                 OutlinedButton(
                     onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${org.phone}"))) },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Call ${org.phone}") }
+                ) { Text("${t("Call")} ${org.phone}") }
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.lbl
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,7 +46,7 @@ private fun statusColor(status: String): Color = when (status) {
 fun RequestsTab(vm: AppViewModel) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(Unit) { vm.loadRequests() }
-    val titles = listOf("My requests", "Incoming (${vm.incoming.size})", "Nearby")
+    val titles = listOf(t("My requests"), "${t("Incoming")} (${vm.incoming.size})", t("Nearby"))
 
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
@@ -62,7 +64,7 @@ fun RequestsTab(vm: AppViewModel) {
             if (list.isEmpty() && !vm.busy) {
                 item {
                     Text(
-                        when (tab) { 0 -> "You haven't sent any requests yet."; 1 -> "No incoming requests right now."; else -> "No nearby requests." },
+                        when (tab) { 0 -> t("You haven't sent any requests yet."); 1 -> t("No incoming requests right now."); else -> t("No nearby requests.") },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 24.dp),
                     )
@@ -97,36 +99,36 @@ private fun RequestCard(
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    (if (req.isEmergency) "🚨 " else "") + "${req.bloodGroup} · ${req.units} bag(s)",
+                    (if (req.isEmergency) "🚨 " else "") + "${req.bloodGroup} · ${req.units} ${t("bag(s)")}",
                     fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium,
                 )
-                Text(req.status.replaceFirstChar { it.uppercase() }, color = statusColor(req.status), fontWeight = FontWeight.SemiBold)
+                Text(lbl(req.status), color = statusColor(req.status), fontWeight = FontWeight.SemiBold)
             }
-            Text("${req.hospital}, ${req.upazila}, ${req.district}")
+            Text("${req.hospital}, ${req.upazila}, ${lbl(req.district)}")
             Text(
-                "Urgency: ${req.urgency} • Needed by ${shortDate(req.neededByDate)}",
+                "${t("Urgency:")} ${lbl(req.urgency)} • ${t("Needed by")} ${shortDate(req.neededByDate)}",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
             )
             if (mode != 0) {
-                Text("From: ${req.seekerName}", style = MaterialTheme.typography.bodyMedium)
+                Text("${t("From:")} ${req.seekerName}", style = MaterialTheme.typography.bodyMedium)
             }
             if (req.message.isNotBlank()) Text("“${req.message}”", style = MaterialTheme.typography.bodyMedium)
-            if (mode == 0 && !req.targetDonorName.isNullOrBlank()) Text("To: ${req.targetDonorName}")
+            if (mode == 0 && !req.targetDonorName.isNullOrBlank()) Text("${t("To:")} ${req.targetDonorName}")
             if (mode == 0 && req.status == "accepted") {
                 Text(
-                    "Accepted by ${req.acceptedDonorName.orEmpty()} — ${req.acceptedDonorPhone.orEmpty()}",
+                    "${t("Accepted by")} ${req.acceptedDonorName.orEmpty()} — ${req.acceptedDonorPhone.orEmpty()}",
                     color = statusColor("accepted"), fontWeight = FontWeight.SemiBold,
                 )
             }
-            req.distanceKm?.let { if (mode == 2) Text("${it.toInt()} km away", style = MaterialTheme.typography.bodySmall) }
+            req.distanceKm?.let { if (mode == 2) Text("${it.toInt()} ${t("km away")}", style = MaterialTheme.typography.bodySmall) }
 
             if (mode == 0 && (req.status == "pending" || req.status == "accepted")) {
-                OutlinedButton(onClick = onCancel, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Cancel request") }
+                OutlinedButton(onClick = onCancel, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(t("Cancel request")) }
             }
             if (mode == 1) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                    Button(onClick = onAccept, enabled = !busy, modifier = Modifier.weight(1f)) { Text("Accept") }
-                    OutlinedButton(onClick = onReject, enabled = !busy, modifier = Modifier.weight(1f)) { Text("Decline") }
+                    Button(onClick = onAccept, enabled = !busy, modifier = Modifier.weight(1f)) { Text(t("Accept")) }
+                    OutlinedButton(onClick = onReject, enabled = !busy, modifier = Modifier.weight(1f)) { Text(t("Decline")) }
                 }
             }
         }

@@ -25,6 +25,31 @@ interface BloodBridgeApi {
     @POST("auth/register")
     suspend fun register(@Body body: RegisterBody): AuthResponse
 
+    @POST("auth/google")
+    suspend fun google(@Body body: GoogleBody): AuthResponse
+
+    @GET("admin/stats")
+    suspend fun adminStats(): StatsResponse
+
+    @GET("admin/users")
+    suspend fun adminUsers(
+        @Query("search") search: String?,
+        @Query("page") page: Int,
+        @Query("limit") limit: Int,
+    ): AdminUsersResponse
+
+    @PATCH("admin/users/{id}/verify")
+    suspend fun adminVerify(@Path("id") id: String): OkResponse
+
+    @DELETE("admin/users/{id}")
+    suspend fun adminDeleteUser(@Path("id") id: String): OkResponse
+
+    @GET("admin/requests")
+    suspend fun adminRequests(@Query("status") status: String?): RequestsResponse
+
+    @PATCH("admin/requests/{id}/status")
+    suspend fun adminSetStatus(@Path("id") id: String, @Body body: StatusBody): OkResponse
+
     @GET("auth/me")
     suspend fun me(): MeResponse
 

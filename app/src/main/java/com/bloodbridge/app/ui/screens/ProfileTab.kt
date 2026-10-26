@@ -1,5 +1,6 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.t
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -7,6 +8,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import com.bloodbridge.app.ui.LanguageToggle
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -60,14 +63,14 @@ fun ProfileTab(vm: AppViewModel) {
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete account?") },
-            text = { Text("This permanently deletes your profile, requests and history. This cannot be undone.") },
+            title = { Text(t("Delete account?")) },
+            text = { Text(t("This permanently deletes your profile, requests and history. This cannot be undone.")) },
             confirmButton = {
                 TextButton(enabled = !vm.busy, onClick = { confirmDelete = false; vm.deleteAccount() }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(t("Delete"), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(t("Cancel")) } },
         )
     }
 
@@ -89,18 +92,18 @@ fun ProfileTab(vm: AppViewModel) {
                 Text(u?.fullName?.take(1)?.uppercase().orEmpty(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             }
         }
-        OutlinedButton(onClick = { picker.launch("image/*") }, enabled = !vm.busy) { Text("Change photo") }
+        OutlinedButton(onClick = { picker.launch("image/*") }, enabled = !vm.busy) { Text(t("Change photo")) }
         Text(u?.email.orEmpty(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Verified: ${if (u?.isVerified == true) "Yes ✓" else "No"}", style = MaterialTheme.typography.bodySmall)
+        Text("${t("Verified")}: ${if (u?.isVerified == true) "✓" else "—"}", style = MaterialTheme.typography.bodySmall)
 
-        AppTextField(fullName, { fullName = it }, "Full name")
-        AppTextField(phone, { phone = it }, "Phone (01XXXXXXXXX)", keyboardType = KeyboardType.Phone)
-        DropdownField("Blood group", bloodGroup, Constants.bloodGroups, { bloodGroup = it })
-        DropdownField("District", district, Constants.districts, { district = it })
-        AppTextField(upazila, { upazila = it }, "Upazila")
-        AppTextField(address, { address = it }, "Present address")
+        AppTextField(fullName, { fullName = it }, t("Full name"))
+        AppTextField(phone, { phone = it }, t("Phone (01XXXXXXXXX)"), keyboardType = KeyboardType.Phone)
+        DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it })
+        DropdownField(t("District"), district, Constants.districts, { district = it })
+        AppTextField(upazila, { upazila = it }, t("Upazila"))
+        AppTextField(address, { address = it }, t("Present address"))
         ErrorBanner(vm.error)
-        PrimaryButton("Save changes", vm.busy, {
+        PrimaryButton(t("Save changes"), vm.busy, {
             vm.updateProfile(
                 UpdateProfileBody(
                     fullName = fullName.trim(), phone = phone.trim(), bloodGroup = bloodGroup,
@@ -109,10 +112,14 @@ fun ProfileTab(vm: AppViewModel) {
             )
         })
 
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(t("Language"), modifier = Modifier.padding(end = 8.dp))
+            LanguageToggle()
+        }
         Box(Modifier.height(8.dp))
-        OutlinedButton(onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth()) { Text("Log out") }
+        OutlinedButton(onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth()) { Text(t("Log out")) }
         TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("Delete my account", color = MaterialTheme.colorScheme.error)
+            Text(t("Delete my account"), color = MaterialTheme.colorScheme.error)
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.lbl
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,9 +60,9 @@ fun DonorTab(vm: AppViewModel) {
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Available to donate", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                        Text(t("Available to donate"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "When off, you are hidden from donor search and new requests.",
+                            t("When off, you are hidden from donor search and new requests."),
                             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -79,24 +81,24 @@ fun DonorTab(vm: AppViewModel) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (cooldown) {
-                            Text("You donated recently", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                            Text(t("You donated recently"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "For your safety you can donate again in $daysLeft days (${nextEligibleLabel(user?.lastDonationDate).orEmpty()}).",
+                                "${t("For your safety you can donate again in")} $daysLeft ${t("days")} (${nextEligibleLabel(user?.lastDonationDate).orEmpty()}).",
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         } else {
-                            Text("Did you donate blood today?", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
+                            Text(t("Did you donate blood today?"), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "Recording it adds this to your Donation History and automatically makes you Unavailable for 120 days.",
+                                t("Recording it adds this to your Donation History and automatically makes you Unavailable for 120 days."),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall,
                             )
                             if (!confirming) {
-                                Button(onClick = { confirming = true }) { Text("I donated today") }
+                                Button(onClick = { confirming = true }) { Text(t("I donated today")) }
                             } else {
-                                Text("Confirm you donated blood today?", style = MaterialTheme.typography.bodyMedium)
+                                Text(t("Confirm you donated blood today?"), style = MaterialTheme.typography.bodyMedium)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Button(enabled = !vm.busy, onClick = { vm.recordDonation(); confirming = false }) { Text("Yes") }
-                                    OutlinedButton(onClick = { confirming = false }) { Text("Cancel") }
+                                    Button(enabled = !vm.busy, onClick = { vm.recordDonation(); confirming = false }) { Text(t("Yes")) }
+                                    OutlinedButton(onClick = { confirming = false }) { Text(t("Cancel")) }
                                 }
                             }
                         }
@@ -105,9 +107,9 @@ fun DonorTab(vm: AppViewModel) {
                 }
             }
         }
-        item { Text("Donation history", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) }
+        item { Text(t("Donation history"), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) }
         if (vm.history.isEmpty()) {
-            item { Text("No donations recorded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item { Text(t("No donations recorded yet."), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         items(vm.history, key = { it.id }) { d ->
             Card(
@@ -116,8 +118,8 @@ fun DonorTab(vm: AppViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("${d.bloodGroup} · ${d.units} bag(s)", fontWeight = FontWeight.SemiBold)
-                    Text("${d.hospital}, ${d.district}", style = MaterialTheme.typography.bodyMedium)
+                    Text("${d.bloodGroup} · ${d.units} ${t("bag(s)")}", fontWeight = FontWeight.SemiBold)
+                    Text("${d.hospital}, ${lbl(d.district)}", style = MaterialTheme.typography.bodyMedium)
                     Text(shortDate(d.donationDate), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
             }

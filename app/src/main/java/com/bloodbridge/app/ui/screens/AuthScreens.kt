@@ -1,5 +1,6 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.platform.LocalContext
+import com.bloodbridge.app.ui.LanguageToggle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,20 +46,20 @@ fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
     if (showReset) {
         AlertDialog(
             onDismissRequest = { showReset = false; vm.clearError() },
-            title = { Text("Reset password") },
+            title = { Text(t("Reset password")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("We'll email you a link to set a new password.")
-                    AppTextField(resetEmail, { resetEmail = it }, "Email", keyboardType = KeyboardType.Email)
+                    Text(t("We'll email you a link to set a new password."))
+                    AppTextField(resetEmail, { resetEmail = it }, t("Email"), keyboardType = KeyboardType.Email)
                     ErrorBanner(vm.error)
                 }
             },
             confirmButton = {
                 TextButton(enabled = !vm.busy, onClick = { vm.resetPassword(resetEmail) { showReset = false } }) {
-                    Text(if (vm.busy) "Sending…" else "Send link")
+                    Text(if (vm.busy) t("Sending…") else t("Send link"))
                 }
             },
-            dismissButton = { TextButton(onClick = { showReset = false; vm.clearError() }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showReset = false; vm.clearError() }) { Text(t("Cancel")) } },
         )
     }
 
@@ -68,21 +72,28 @@ fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Spacer(Modifier.height(48.dp))
+        LanguageToggle()
+        Spacer(Modifier.height(24.dp))
         Text("BloodBridge", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.ExtraBold, color = Brand)
-        Text("Welcome back", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        Text("Log in to continue saving lives.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(t("Welcome back"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        Text(t("Log in to continue saving lives."), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
 
-        AppTextField(email, { email = it }, "Email", keyboardType = KeyboardType.Email)
-        AppTextField(password, { password = it }, "Password", password = true)
+        AppTextField(email, { email = it }, t("Email"), keyboardType = KeyboardType.Email)
+        AppTextField(password, { password = it }, t("Password"), password = true)
         if (!showReset) ErrorBanner(vm.error)
         vm.info?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-        TextButton(onClick = { vm.clearError(); resetEmail = email; showReset = true }) { Text("Forgot password?") }
-        PrimaryButton("Log in", vm.busy, { vm.login(email, password) })
+        TextButton(onClick = { vm.clearError(); resetEmail = email; showReset = true }) { Text(t("Forgot password?")) }
+        PrimaryButton(t("Log in"), vm.busy, { vm.login(email, password) })
+
+        Text(t("or"), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
+        val context = LocalContext.current
+        OutlinedButton(onClick = { vm.googleLogin(context) }, enabled = !vm.busy, modifier = Modifier.fillMaxWidth().height(50.dp)) {
+            Text("G  " + t("Log in with Google"))
+        }
 
         TextButton(onClick = { vm.clearError(); onGoRegister() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Don't have an account? Register")
+            Text(t("Don't have an account? Register"))
         }
     }
 }
@@ -110,28 +121,28 @@ fun RegisterScreen(vm: AppViewModel, onGoLogin: () -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Create your account", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Join the network of donors and seekers.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(t("Create your account"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(t("Join the network of donors and seekers."), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        AppTextField(fullName, { fullName = it }, "Full name")
-        AppTextField(email, { email = it }, "Email", keyboardType = KeyboardType.Email)
-        AppTextField(phone, { phone = it }, "Phone (01XXXXXXXXX)", keyboardType = KeyboardType.Phone)
-        DropdownField("Blood group", bloodGroup, Constants.bloodGroups, { bloodGroup = it })
-        DropdownField("Gender", gender, Constants.genders, { gender = it })
-        AppTextField(dob, { dob = it }, "Date of birth", placeholder = "YYYY-MM-DD", keyboardType = KeyboardType.Number)
-        DropdownField("District", district, Constants.districts, { district = it })
-        AppTextField(upazila, { upazila = it }, "Upazila")
-        AppTextField(address, { address = it }, "Present address")
-        AppTextField(password, { password = it }, "Password", password = true)
-        AppTextField(confirm, { confirm = it }, "Confirm password", password = true)
+        AppTextField(fullName, { fullName = it }, t("Full name"))
+        AppTextField(email, { email = it }, t("Email"), keyboardType = KeyboardType.Email)
+        AppTextField(phone, { phone = it }, t("Phone (01XXXXXXXXX)"), keyboardType = KeyboardType.Phone)
+        DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it })
+        DropdownField(t("Gender"), gender, Constants.genders, { gender = it })
+        AppTextField(dob, { dob = it }, t("Date of birth"), placeholder = "YYYY-MM-DD", keyboardType = KeyboardType.Number)
+        DropdownField(t("District"), district, Constants.districts, { district = it })
+        AppTextField(upazila, { upazila = it }, t("Upazila"))
+        AppTextField(address, { address = it }, t("Present address"))
+        AppTextField(password, { password = it }, t("Password"), password = true)
+        AppTextField(confirm, { confirm = it }, t("Confirm password"), password = true)
 
         ErrorBanner(vm.error)
-        PrimaryButton("Register", vm.busy, {
+        PrimaryButton(t("Register"), vm.busy, {
             vm.register(fullName, email, password, confirm, phone, bloodGroup, gender, dob, district, upazila, address)
         })
 
         TextButton(onClick = { vm.clearError(); onGoLogin() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Already have an account? Log in")
+            Text(t("Already have an account? Log in"))
         }
         Spacer(Modifier.height(24.dp))
     }

@@ -1,5 +1,6 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -20,11 +21,11 @@ import com.bloodbridge.app.ui.AppViewModel
 private data class TabItem(val label: String, val icon: String)
 
 private val tabs = listOf(
-    TabItem("Find", "🔍"),
-    TabItem("Requests", "🩸"),
-    TabItem("Donor", "❤"),
-    TabItem("Alerts", "🔔"),
-    TabItem("Profile", "👤"),
+    TabItem(t("Find"), "🔍"),
+    TabItem(t("Requests"), "🩸"),
+    TabItem(t("Donor"), "❤"),
+    TabItem(t("Alerts"), "🔔"),
+    TabItem(t("Profile"), "👤"),
 )
 
 @Composable
@@ -48,7 +49,7 @@ fun MainShell(vm: AppViewModel) {
                         selected = tab == i,
                         onClick = { vm.clearError(); tab = i },
                         icon = { Text(item.icon) },
-                        label = { Text(item.label) },
+                        label = { Text(t(item.label)) },
                     )
                 }
             }

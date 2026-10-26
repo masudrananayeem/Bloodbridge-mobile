@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        com.bloodbridge.app.i18n.Lang.init(this)
         setContent {
             BloodBridgeTheme {
                 Surface(modifier = Modifier.fillMaxSize()) { Root() }
@@ -39,6 +40,8 @@ private fun Root(vm: AppViewModel = viewModel()) {
     var showRegister by rememberSaveable { mutableStateOf(false) }
     when {
         vm.booting -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        vm.user != null && vm.user?.profileComplete == false -> com.bloodbridge.app.ui.screens.CompleteProfileScreen(vm)
+        vm.user?.role == "admin" -> com.bloodbridge.app.ui.screens.AdminShell(vm)
         vm.user != null -> MainShell(vm)
         showRegister -> RegisterScreen(vm, onGoLogin = { showRegister = false })
         else -> LoginScreen(vm, onGoRegister = { showRegister = true })

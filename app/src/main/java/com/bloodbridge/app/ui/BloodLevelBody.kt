@@ -1,5 +1,6 @@
 package com.bloodbridge.app.ui
 
+import com.bloodbridge.app.i18n.t
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -115,7 +116,7 @@ fun BloodLevelBody(lastDonationDate: String?, modifier: Modifier = Modifier) {
         }
         Text("${level.roundToInt()}%", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
         Text(
-            if (recovering) "Recovering · $daysLeft days" else "Fully recovered",
+            if (recovering) "${t("Recovering")} · $daysLeft ${t("days")}" else t("Fully recovered"),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

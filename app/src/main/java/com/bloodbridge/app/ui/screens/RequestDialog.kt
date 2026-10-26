@@ -1,5 +1,6 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
@@ -52,14 +53,14 @@ fun RequestDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
-                DropdownField("Blood group", bloodGroup, Constants.bloodGroups, { bloodGroup = it })
-                AppTextField(hospital, { hospital = it }, "Hospital")
-                DropdownField("District", district, Constants.districts, { district = it })
-                AppTextField(upazila, { upazila = it }, "Upazila")
-                AppTextField(units, { units = it.filter(Char::isDigit) }, "Units (bags)", keyboardType = KeyboardType.Number)
-                DropdownField("Urgency", urgency, Constants.urgencies, { urgency = it })
-                AppTextField(neededBy, { neededBy = it }, "Needed by", placeholder = "YYYY-MM-DD")
-                AppTextField(message, { message = it.take(500) }, "Message (optional)")
+                DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it })
+                AppTextField(hospital, { hospital = it }, t("Hospital"))
+                DropdownField(t("District"), district, Constants.districts, { district = it })
+                AppTextField(upazila, { upazila = it }, t("Upazila"))
+                AppTextField(units, { units = it.filter(Char::isDigit) }, t("Units (bags)"), keyboardType = KeyboardType.Number)
+                DropdownField(t("Urgency"), urgency, Constants.urgencies, { urgency = it })
+                AppTextField(neededBy, { neededBy = it }, t("Needed by"), placeholder = "YYYY-MM-DD")
+                AppTextField(message, { message = it.take(500) }, t("Message (optional)"))
                 val shown = localError ?: error
                 if (shown != null) Text(shown, color = androidx.compose.material3.MaterialTheme.colorScheme.error)
             }
@@ -71,9 +72,9 @@ fun RequestDialog(
                     val u = units.toIntOrNull() ?: 0
                     localError = when {
                         bloodGroup.isBlank() || hospital.isBlank() || district.isBlank() || upazila.isBlank() ->
-                            "Please fill in all required fields."
-                        u < 1 -> "Units must be at least 1."
-                        !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(neededBy) -> "Needed-by date must be YYYY-MM-DD."
+                            t("Please fill in all required fields.")
+                        u < 1 -> t("Units must be at least 1.")
+                        !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(neededBy) -> t("Needed-by date must be YYYY-MM-DD.")
                         else -> null
                     }
                     if (localError == null) {
@@ -86,8 +87,8 @@ fun RequestDialog(
                         )
                     }
                 },
-            ) { Text(if (busy) "Sending…" else "Send") }
+            ) { Text(if (busy) t("Sending…") else t("Send")) }
         },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(t("Cancel")) } },
     )
 }

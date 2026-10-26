@@ -1,5 +1,6 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,14 +36,14 @@ fun AlertsTab(vm: AppViewModel) {
         item {
             Column {
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Notifications", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                    if (vm.unreadCount > 0) TextButton(onClick = { vm.markAllRead() }) { Text("Mark all read") }
+                    Text(t("Notifications"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    if (vm.unreadCount > 0) TextButton(onClick = { vm.markAllRead() }) { Text(t("Mark all read")) }
                 }
                 ErrorBanner(vm.error)
             }
         }
         if (vm.notifications.isEmpty() && !vm.busy) {
-            item { Text("No notifications yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            item { Text(t("No notifications yet."), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
         items(vm.notifications, key = { it.id }) { n ->
             Card(

@@ -1,5 +1,7 @@
 package com.bloodbridge.app.ui.screens
 
+import com.bloodbridge.app.i18n.lbl
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,7 +54,7 @@ fun SearchTab(vm: AppViewModel) {
 
     target?.let { donor ->
         RequestDialog(
-            title = "Request ${donor.fullName}",
+            title = "${t("Request")}: ${donor.fullName}",
             defaultBloodGroup = donor.bloodGroup,
             defaultDistrict = vm.user?.district.orEmpty(),
             defaultUpazila = vm.user?.upazila.orEmpty(),
@@ -66,7 +68,7 @@ fun SearchTab(vm: AppViewModel) {
     }
     if (showEmergency) {
         RequestDialog(
-            title = "Emergency request",
+            title = t("Emergency request"),
             defaultBloodGroup = bloodGroup,
             defaultDistrict = vm.user?.district.orEmpty(),
             defaultUpazila = vm.user?.upazila.orEmpty(),
@@ -85,17 +87,17 @@ fun SearchTab(vm: AppViewModel) {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
-                Text("Hello, ${vm.user?.fullName?.substringBefore(' ').orEmpty()}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                DropdownField("Blood group", bloodGroup, Constants.bloodGroups, { bloodGroup = it }, anyLabel = "Any")
-                DropdownField("District", district, Constants.districts, { district = it }, anyLabel = "Any")
+                Text("${t("Hello,")} ${vm.user?.fullName?.substringBefore(' ').orEmpty()}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it }, anyLabel = t("Any"))
+                DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Near me first", modifier = Modifier.weight(1f))
+                    Text(t("Near me first"), modifier = Modifier.weight(1f))
                     Switch(checked = nearMe, onCheckedChange = { nearMe = it })
                 }
                 if (target == null && !showEmergency) ErrorBanner(vm.error)
-                PrimaryButton("Search", vm.busy, { vm.search(bloodGroup, district, nearMe) })
+                PrimaryButton(t("Search"), vm.busy, { vm.search(bloodGroup, district, nearMe) })
                 Button(onClick = { vm.clearError(); showEmergency = true }, modifier = Modifier.fillMaxWidth().height(46.dp)) {
-                    Text("🚨 Emergency request (nearest 5 donors)")
+                    Text(t("🚨 Emergency request (nearest 5 donors)"))
                 }
             }
         }
@@ -103,7 +105,7 @@ fun SearchTab(vm: AppViewModel) {
         if (vm.searched && vm.donors.isEmpty() && !vm.busy) {
             item {
                 Text(
-                    "No available donors match these filters.",
+                    t("No available donors match these filters."),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 24.dp),
                 )
@@ -135,16 +137,16 @@ private fun DonorCard(donor: Donor, onRequest: () -> Unit) {
                         donor.fullName + if (donor.isVerified) "  ✓" else "",
                         fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium,
                     )
-                    val place = listOf(donor.upazila, donor.district).filter { it.isNotBlank() }.joinToString(", ")
+                    val place = listOf(donor.upazila, lbl(donor.district)).filter { it.isNotBlank() }.joinToString(", ")
                     Text(place, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                     val extra = buildList {
-                        donor.age?.let { add("$it yrs") }
-                        donor.distanceKm?.let { add("${it.roundToInt()} km away") }
+                        donor.age?.let { add("$it ${t("yrs")}") }
+                        donor.distanceKm?.let { add("${it.roundToInt()} ${t("km away")}") }
                     }.joinToString(" • ")
                     if (extra.isNotBlank()) Text(extra, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text("Request blood") }
+            Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text(t("Request blood")) }
         }
     }
 }

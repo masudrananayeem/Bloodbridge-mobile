@@ -1,8 +1,17 @@
 package com.bloodbridge.app.data
 
+import com.bloodbridge.app.i18n.t
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
+import android.content.Context
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
 import com.bloodbridge.app.BuildConfig
+import com.bloodbridge.app.R
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -27,11 +36,12 @@ fun Throwable.friendlyMessage(): String {
     val m = message.orEmpty()
     return when {
         m.contains("password is invalid", true) || m.contains("INVALID_LOGIN_CREDENTIALS", true) ||
-            m.contains("supplied auth credential", true) -> "Email or password is incorrect."
-        m.contains("no user record", true) -> "No account found with this email."
-        m.contains("already in use", true) -> "This email is already registered."
-        m.contains("network", true) || m.contains("Unable to resolve host", true) -> "No internet connection."
-        m.isBlank() -> "Something went wrong. Please try again."
+            m.contains("supplied auth credential", true) -> t("Email or password is incorrect.")
+        m.contains("no user record", true) -> t("No account found with this email.")
+        m.contains("already in use", true) -> t("This email is already registered.")
+        m.contains("cancel", true) -> t("Sign-in was cancelled.")
+        m.contains("network", true) || m.contains("Unable to resolve host", true) -> t("No internet connection.")
+        m.isBlank() -> t("Something went wrong. Please try again.")
         else -> m
     }
 }
@@ -84,6 +94,31 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
 
     suspend fun me(): User = api.me().user
 
+    /** Google sign-in (Credential Manager) -> Firebase -> backend /auth/google. May return profileComplete=false. */
+    suspend fun googleLogin(activityContext: Context): User {
+        val option = GetSignInWithGoogleOption.Builder(activityContext.getString(R.string.default_web_client_id)).build()
+        val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
+        val result = CredentialManager.create(activityContext).getCredential(activityContext, request)
+        val credential = result.credential
+        if (credential !is CustomCredential || credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            throw IllegalStateException(t("Google sign-in failed."))
+        }
+        val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
+        auth.signInWithCredential(GoogleAuthProvider.getCredential(googleIdToken, null)).await()
+        val firebaseToken = auth.currentUser!!.getIdToken(true).await().token!!
+        val res = api.google(GoogleBody(firebaseToken))
+        session.token = res.token
+        return res.user
+    }
+
+    suspend fun adminStats() = api.adminStats().stats
+    suspend fun adminUsers(search: String?, page: Int) =
+        api.adminUsers(search?.takeIf { it.isNotBlank() }, page, 24)
+    suspend fun adminVerify(id: String) = api.adminVerify(id)
+    suspend fun adminDeleteUser(id: String) = api.adminDeleteUser(id)
+    suspend fun adminRequests(status: String?) = api.adminRequests(status?.takeIf { it.isNotBlank() }).requests
+    suspend fun adminSetStatus(id: String, status: String) = api.adminSetStatus(id, StatusBody(status))
+
     suspend fun createRequest(body: CreateRequestBody) = api.createRequest(body)
     suspend fun myRequests() = api.myRequests().requests
     suspend fun incoming() = api.incomingRequests().requests
@@ -113,9 +148,9 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
     /** Uploads a profile photo straight to Cloudinary (unsigned preset) and returns its https URL. */
     suspend fun uploadPhoto(bytes: ByteArray): String = withContext(Dispatchers.IO) {
         require(BuildConfig.CLOUDINARY_CLOUD_NAME.isNotBlank() && BuildConfig.CLOUDINARY_UPLOAD_PRESET.isNotBlank()) {
-            "Cloudinary is not configured (CLOUDINARY_CLOUD_NAME / CLOUDINARY_UPLOAD_PRESET in gradle.properties)."
+            t("Cloudinary is not configured (CLOUDINARY_CLOUD_NAME / CLOUDINARY_UPLOAD_PRESET in gradle.properties).")
         }
-        require(bytes.size <= 10 * 1024 * 1024) { "Image is too large (max 10 MB)." }
+        require(bytes.size <= 10 * 1024 * 1024) { t("Image is too large (max 10 MB).") }
         val body = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("upload_preset", BuildConfig.CLOUDINARY_UPLOAD_PRESET)
             .addFormDataPart("file", "photo.jpg", bytes.toRequestBody("image/*".toMediaType()))
@@ -128,7 +163,7 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
             val text = res.body?.string().orEmpty()
             if (!res.isSuccessful) throw IllegalStateException("Photo upload failed (${res.code}).")
             AppJson.parseToJsonElement(text).jsonObject["secure_url"]?.jsonPrimitive?.content
-                ?: throw IllegalStateException("Photo upload failed.")
+                ?: throw IllegalStateException(t("Photo upload failed."))
         }
     }
 

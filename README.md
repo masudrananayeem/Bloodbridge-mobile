@@ -5,7 +5,11 @@ Phase 2: bottom tabs — Search (+ direct request, emergency request), Requests 
 Donor (availability, "I donated today", blood-level body animation, history), Alerts (notifications), Profile.
 Phase 3: profile edit + photo upload (Cloudinary), organizations directory (call button), forgot password, delete account.
   -> gradle.properties e CLOUDINARY_CLOUD_NAME ar CLOUDINARY_UPLOAD_PRESET dite hobe (web-er VITE_CLOUDINARY_* er same value).
-Phase 4 (baki): Bangla/English, Google login, feedback, admin panel.
+Phase 4: Bangla/English toggle (login screen + Profile), Google login + complete-profile step, admin panel
+  (admin role-er account login korle automatic AdminShell: Overview stats, Users verify/delete/search/load-more, Requests status).
+  Google login: Firebase Console > Authentication > Google enabled; Project settings > Android app e SHA-1 (+ SHA-256) add
+  kore google-services.json abar download kore app/ e rakhun. (debug SHA-1: ./gradlew signingReport)
+Phase 5 (baki): feedback form (feedback API-er path/body dorkar), push notification, polish.
 
 ## Run (VS Code-e code dekhben, build Android Studio-te)
 1. Android Studio install (developer.android.com/studio). File > Open > ei folder.

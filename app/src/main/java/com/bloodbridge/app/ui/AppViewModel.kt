@@ -1,5 +1,6 @@
 package com.bloodbridge.app.ui
 
+import com.bloodbridge.app.i18n.t
 import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,7 +14,9 @@ import com.bloodbridge.app.data.CreateRequestBody
 import com.bloodbridge.app.data.Donation
 import com.bloodbridge.app.data.Organization
 import com.bloodbridge.app.data.UpdateProfileBody
+import android.content.Context
 import android.net.Uri
+import com.bloodbridge.app.data.AdminStats
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.bloodbridge.app.data.Donor
@@ -60,6 +63,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var organizations by mutableStateOf<List<Organization>>(emptyList())
         private set
 
+    // ---- admin ----
+    var adminStats by mutableStateOf(AdminStats())
+        private set
+    var adminUsers by mutableStateOf<List<User>>(emptyList())
+        private set
+    var adminUsersPage by mutableStateOf(1)
+        private set
+    var adminUsersPages by mutableStateOf(1)
+        private set
+    var adminRequests by mutableStateOf<List<BloodRequest>>(emptyList())
+        private set
+
     init {
         viewModelScope.launch {
             user = repo.restore()
@@ -70,7 +85,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun clearError() { error = null }
 
     fun login(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) { error = "Enter email and password."; return }
+        if (email.isBlank() || password.isBlank()) { error = t("Enter email and password."); return }
         info = null
         launchBusy { user = repo.login(email, password) }
     }
@@ -82,11 +97,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val missing = listOf(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
             .any { it.isBlank() }
         when {
-            missing -> error = "Please fill in all fields."
-            password.length < 6 -> error = "Password must be at least 6 characters."
-            password != confirm -> error = "Passwords do not match."
-            !Regex("^01[3-9]\\d{8}$").matches(phone) -> error = "Enter a valid Bangladeshi phone number (01XXXXXXXXX)."
-            !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dateOfBirth) -> error = "Date of birth must be YYYY-MM-DD."
+            missing -> error = t("Please fill in all fields.")
+            password.length < 6 -> error = t("Password must be at least 6 characters.")
+            password != confirm -> error = t("Passwords do not match.")
+            !Regex("^01[3-9]\\d{8}$").matches(phone) -> error = t("Enter a valid Bangladeshi phone number (01XXXXXXXXX).")
+            !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dateOfBirth) -> error = t("Date of birth must be YYYY-MM-DD.")
             else -> launchBusy {
                 user = repo.register(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
             }
@@ -111,7 +126,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun createRequest(body: CreateRequestBody, onDone: () -> Unit) {
         launchBusy {
             repo.createRequest(body)
-            info = if (body.isEmergency) "Emergency request sent to the nearest donors." else "Request sent."
+            info = if (body.isEmergency) t("Emergency request sent to the nearest donors.") else t("Request sent.")
             myRequests = repo.myRequests()
             onDone()
         }
@@ -121,7 +136,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         launchBusy {
             repo.cancelRequest(id)
             myRequests = repo.myRequests()
-            info = "Request cancelled."
+            info = t("Request cancelled.")
         }
     }
 
@@ -130,7 +145,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             repo.respond(id, action)
             incoming = repo.incoming()
             nearby = repo.nearby()
-            info = if (action == "accept") "You accepted this request. The seeker can now see your contact." else "Request declined."
+            info = if (action == "accept") t("You accepted this request. The seeker can now see your contact.") else t("Request declined.")
         }
     }
 
@@ -152,7 +167,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         launchBusy {
             user = repo.recordDonation()
             history = repo.history()
-            info = "Donation recorded. Thank you!"
+            info = t("Donation recorded. Thank you!")
         }
     }
 
@@ -185,7 +200,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun updateProfile(body: UpdateProfileBody) {
         launchBusy {
             user = repo.updateProfile(body)
-            info = "Profile updated."
+            info = t("Profile updated.")
         }
     }
 
@@ -193,10 +208,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         launchBusy {
             val bytes = withContext(Dispatchers.IO) {
                 getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() }
-            } ?: throw IllegalStateException("Could not read the selected image.")
+            } ?: throw IllegalStateException(t("Could not read the selected image."))
             val url = repo.uploadPhoto(bytes)
             user = repo.updateProfile(UpdateProfileBody(photoURL = url))
-            info = "Profile photo updated."
+            info = t("Profile photo updated.")
         }
     }
 
@@ -205,10 +220,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun resetPassword(email: String, onDone: () -> Unit) {
-        if (email.isBlank()) { error = "Enter your email address."; return }
+        if (email.isBlank()) { error = t("Enter your email address."); return }
         launchBusy {
             repo.sendPasswordReset(email)
-            info = "Password reset email sent. Check your inbox."
+            info = t("Password reset email sent. Check your inbox.")
             onDone()
         }
     }
@@ -220,11 +235,77 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun googleLogin(context: Context) {
+        info = null
+        launchBusy { user = repo.googleLogin(context) }
+    }
+
+    fun completeProfile(phone: String, bloodGroup: String, district: String, upazila: String, address: String, dob: String) {
+        when {
+            listOf(phone, bloodGroup, district, upazila, address).any { it.isBlank() } -> error = t("Please fill in all fields.")
+            !Regex("^01[3-9]\\d{8}$").matches(phone) -> error = t("Enter a valid Bangladeshi phone number (01XXXXXXXXX).")
+            dob.isNotBlank() && !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dob) -> error = t("Date of birth must be YYYY-MM-DD.")
+            else -> launchBusy {
+                user = repo.updateProfile(
+                    UpdateProfileBody(
+                        phone = phone, bloodGroup = bloodGroup, district = district, upazila = upazila.trim(),
+                        address = address.trim(), dateOfBirth = dob.ifBlank { null },
+                    )
+                )
+            }
+        }
+    }
+
+    fun loadAdminStats() {
+        launchBusy { adminStats = repo.adminStats() }
+    }
+
+    fun loadAdminUsers(search: String, loadMore: Boolean = false) {
+        launchBusy {
+            val page = if (loadMore) adminUsersPage + 1 else 1
+            val res = repo.adminUsers(search, page)
+            adminUsers = if (loadMore) adminUsers + res.users else res.users
+            adminUsersPage = res.page
+            adminUsersPages = res.pages
+        }
+    }
+
+    fun adminVerify(id: String, search: String) {
+        launchBusy {
+            repo.adminVerify(id)
+            val res = repo.adminUsers(search, 1)
+            adminUsers = res.users; adminUsersPage = res.page; adminUsersPages = res.pages
+            info = t("Verification updated.")
+        }
+    }
+
+    fun adminDeleteUser(id: String, search: String) {
+        launchBusy {
+            repo.adminDeleteUser(id)
+            val res = repo.adminUsers(search, 1)
+            adminUsers = res.users; adminUsersPage = res.page; adminUsersPages = res.pages
+            info = t("User deleted.")
+        }
+    }
+
+    fun loadAdminRequests(status: String) {
+        launchBusy { adminRequests = repo.adminRequests(status) }
+    }
+
+    fun adminSetStatus(id: String, status: String, filter: String) {
+        launchBusy {
+            repo.adminSetStatus(id, status)
+            adminRequests = repo.adminRequests(filter)
+            info = t("Status updated.")
+        }
+    }
+
     fun logout() {
         repo.logout()
         user = null
         donors = emptyList()
         searched = false
+        adminUsers = emptyList(); adminRequests = emptyList()
         myRequests = emptyList(); incoming = emptyList(); nearby = emptyList()
         notifications = emptyList(); unreadCount = 0; history = emptyList()
     }

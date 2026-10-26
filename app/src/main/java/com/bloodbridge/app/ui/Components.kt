@@ -1,5 +1,7 @@
 package com.bloodbridge.app.ui
 
+import com.bloodbridge.app.i18n.lbl
+import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -48,7 +50,7 @@ fun AppTextField(
         keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboardType),
         visualTransformation = if (password && !visible) PasswordVisualTransformation() else VisualTransformation.None,
         trailingIcon = if (password) {
-            { Text(if (visible) "Hide" else "Show", color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickableNoRipple { visible = !visible }) }
+            { Text(if (visible) t("Hide") else t("Show"), color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickableNoRipple { visible = !visible }) }
         } else null,
         modifier = modifier.fillMaxWidth(),
     )
@@ -67,7 +69,7 @@ fun DropdownField(
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }, modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = selected.ifBlank { anyLabel.orEmpty() },
+            value = if (selected.isBlank()) anyLabel.orEmpty() else lbl(selected),
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -79,7 +81,7 @@ fun DropdownField(
                 DropdownMenuItem(text = { Text(anyLabel) }, onClick = { onSelect(""); expanded = false })
             }
             options.forEach { option ->
-                DropdownMenuItem(text = { Text(option) }, onClick = { onSelect(option); expanded = false })
+                DropdownMenuItem(text = { Text(lbl(option)) }, onClick = { onSelect(option); expanded = false })
             }
         }
     }
@@ -110,3 +112,14 @@ fun ErrorBanner(message: String?) {
 }
 
 private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = this.clickable(onClick = onClick)
+
+@Composable
+fun LanguageToggle(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.material3.TextButton(
+        onClick = { com.bloodbridge.app.i18n.Lang.set(context, if (com.bloodbridge.app.i18n.Lang.current == "bn") "en" else "bn") },
+        modifier = modifier,
+    ) {
+        Text(if (com.bloodbridge.app.i18n.Lang.current == "bn") "English" else "বাংলা")
+    }
+}
