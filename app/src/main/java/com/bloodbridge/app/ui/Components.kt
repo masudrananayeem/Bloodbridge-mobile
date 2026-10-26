@@ -140,14 +140,14 @@ fun ThemeToggle(modifier: Modifier = Modifier) {
 
 @Composable
 fun LegalLinks(modifier: Modifier = Modifier) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    fun open(url: String) = context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+    var open by remember { mutableStateOf<String?>(null) }
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-        androidx.compose.material3.TextButton(onClick = { open(com.bloodbridge.app.BuildConfig.PRIVACY_URL) }) {
+        androidx.compose.material3.TextButton(onClick = { open = "privacy" }) {
             Text(com.bloodbridge.app.i18n.t("Privacy Policy"), style = MaterialTheme.typography.bodySmall)
         }
-        androidx.compose.material3.TextButton(onClick = { open(com.bloodbridge.app.BuildConfig.TERMS_URL) }) {
+        androidx.compose.material3.TextButton(onClick = { open = "terms" }) {
             Text(com.bloodbridge.app.i18n.t("Terms of Service"), style = MaterialTheme.typography.bodySmall)
         }
     }
+    open?.let { LegalDialog(it) { open = null } }
 }

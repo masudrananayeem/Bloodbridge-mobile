@@ -26,6 +26,10 @@ fun t(en: String): String = if (Lang.current == "bn") (bnStrings[en] ?: en) else
 fun lbl(value: String): String = if (Lang.current == "bn") (bnStrings[value] ?: bnDistricts[value] ?: value) else value
 
 private val bnStrings: Map<String, String> = mapOf(
+    "Back" to "পিছনে",
+    "Last updated" to "সর্বশেষ আপডেট",
+    "Privacy Policy" to "গোপনীয়তা নীতি",
+    "Terms of Service" to "সেবার শর্তাবলী",
     "Save" to "সেভ",
     "Saved" to "সেভড",
     "Edit" to "এডিট",
