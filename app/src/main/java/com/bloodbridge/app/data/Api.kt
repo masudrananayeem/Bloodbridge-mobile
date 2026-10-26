@@ -37,6 +37,8 @@ interface BloodBridgeApi {
         @Query("district") district: String?,
         @Query("upazila") upazila: String?,
         @Query("nearMe") nearMe: Boolean?,
+        @Query("page") page: Int?,
+        @Query("limit") limit: Int?,
     ): DonorsResponse
 
     @POST("requests")

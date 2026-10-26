@@ -2,6 +2,9 @@ package com.bloodbridge.app.ui.screens
 
 import com.bloodbridge.app.i18n.lbl
 import com.bloodbridge.app.i18n.t
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -35,6 +39,8 @@ import com.bloodbridge.app.data.BloodRequest
 import com.bloodbridge.app.data.shortDate
 import com.bloodbridge.app.ui.AppViewModel
 import com.bloodbridge.app.ui.ErrorBanner
+import com.bloodbridge.app.ui.DropdownField
+import com.bloodbridge.app.data.Constants
 
 private fun statusColor(status: String): Color = when (status) {
     "accepted", "completed" -> Color(0xFF16A34A)
@@ -47,6 +53,7 @@ fun RequestsTab(vm: AppViewModel) {
     var tab by rememberSaveable { mutableIntStateOf(if (vm.user?.activeMode == "donor") 1 else 0) }
     LaunchedEffect(Unit) { vm.loadRequests() }
     val titles = listOf(t("My requests"), "${t("Incoming")} (${vm.incoming.size})", t("Nearby"))
+    var statusFilter by rememberSaveable { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = tab) {
@@ -55,7 +62,11 @@ fun RequestsTab(vm: AppViewModel) {
             }
         }
         ErrorBanner(vm.error)
-        val list = when (tab) { 0 -> vm.myRequests; 1 -> vm.incoming; else -> vm.nearby }
+        if (tab == 0) {
+            DropdownField(t("Filter by status"), statusFilter, Constants.requestStatuses, { statusFilter = it }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp), anyLabel = t("All statuses"))
+        }
+        val allList = when (tab) { 0 -> vm.myRequests; 1 -> vm.incoming; else -> vm.nearby }
+        val list = if (tab == 0 && statusFilter.isNotBlank()) allList.filter { it.status.equals(statusFilter, ignoreCase = true) } else allList
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -64,7 +75,7 @@ fun RequestsTab(vm: AppViewModel) {
             if (list.isEmpty() && !vm.busy) {
                 item {
                     Text(
-                        when (tab) { 0 -> t("You haven't sent any requests yet."); 1 -> t("No incoming requests right now."); else -> t("No nearby requests.") },
+                        when { tab == 0 && statusFilter.isNotBlank() -> t("No requests match this status."); tab == 0 -> t("You haven't sent any requests yet."); tab == 1 -> t("No incoming requests right now."); else -> t("No nearby requests.") },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 24.dp),
                     )
@@ -90,6 +101,7 @@ private fun RequestCard(
     req: BloodRequest, mode: Int, busy: Boolean,
     onCancel: () -> Unit, onAccept: () -> Unit, onReject: () -> Unit,
 ) {
+    val context = LocalContext.current
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -111,6 +123,7 @@ private fun RequestCard(
             )
             if (mode != 0) {
                 Text("${t("From:")} ${req.seekerName}" + if (req.seekerPhone.isNotBlank()) " · ${req.seekerPhone}" else "", style = MaterialTheme.typography.bodyMedium)
+                if (req.seekerPhone.isNotBlank()) OutlinedButton(onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${req.seekerPhone}"))) }, modifier = Modifier.fillMaxWidth()) { Text("${t("Call")} ${req.seekerName}") }
                 if (!req.targetDonorUid.isNullOrBlank()) Text(t("Direct request"), color = Color(0xFF7C3AED), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
             }
             if (req.reason.isNotBlank()) Text("${t("Reason")}: ${req.reason}", style = MaterialTheme.typography.bodySmall)
@@ -121,6 +134,7 @@ private fun RequestCard(
                     "${t("Accepted by")} ${req.acceptedDonorName.orEmpty()} — ${req.acceptedDonorPhone.orEmpty()}" + (req.acceptedDonorEmail?.takeIf { it.isNotBlank() }?.let { ", $it" } ?: ""),
                     color = statusColor("accepted"), fontWeight = FontWeight.SemiBold,
                 )
+                if (!req.acceptedDonorPhone.isNullOrBlank()) OutlinedButton(onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${req.acceptedDonorPhone}"))) }, modifier = Modifier.fillMaxWidth()) { Text("${t("Call")} ${req.acceptedDonorName.orEmpty()}") }
             }
             if (mode == 0 && req.status == "rejected") Text(t("No donor accepted this request."), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             req.distanceKm?.let { if (mode == 2) Text("${it.toInt()} ${t("km away")}", style = MaterialTheme.typography.bodySmall) }

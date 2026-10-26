@@ -42,6 +42,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var searched by mutableStateOf(false)
         private set
+    var donorPage by mutableStateOf(1)
+        private set
+    var donorPages by mutableStateOf(1)
+        private set
+    var donorTotal by mutableStateOf(0)
+        private set
 
     var info by mutableStateOf<String?>(null)
         private set
@@ -105,9 +111,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun search(bloodGroup: String, district: String, upazila: String, nearMe: Boolean) {
+    fun search(bloodGroup: String, district: String, upazila: String, nearMe: Boolean, page: Int = 1) {
         launchBusy {
-            donors = repo.searchDonors(bloodGroup, district, upazila, nearMe)
+            val result = repo.searchDonors(bloodGroup, district, upazila, nearMe, page, 24)
+            donors = result.donors
+            donorPage = page
+            donorPages = result.pages.coerceAtLeast(1)
+            donorTotal = result.total
             searched = true
         }
     }

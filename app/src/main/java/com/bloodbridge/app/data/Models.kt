@@ -70,7 +70,7 @@ data class Donor(
 )
 
 @Serializable
-data class DonorsResponse(val success: Boolean = true, val donors: List<Donor> = emptyList())
+data class DonorsResponse(val success: Boolean = true, val donors: List<Donor> = emptyList(), val pages: Int = 1, val total: Int = 0)
 
 @Serializable
 data class FieldError(val msg: String = "")

@@ -56,7 +56,6 @@ fun SearchTab(vm: AppViewModel) {
     var target by remember { mutableStateOf<Donor?>(null) }
     var showEmergency by remember { mutableStateOf(false) }
     var savedOnly by rememberSaveable { mutableStateOf(false) }
-    var visible by rememberSaveable { mutableStateOf(24) }
 
     target?.let { donor ->
         RequestDialog(
@@ -95,6 +94,7 @@ fun SearchTab(vm: AppViewModel) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
                 StatsRow(vm, "seeker")
                 Text("${t("Hello,")} ${vm.user?.fullName?.substringBefore(' ').orEmpty()}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(t("Find compatible blood donors near you"), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it }, anyLabel = t("Any"))
                 DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
                 com.bloodbridge.app.ui.AppTextField(upazila, { upazila = it }, t("Upazila"))
@@ -107,7 +107,10 @@ fun SearchTab(vm: AppViewModel) {
                     Switch(checked = savedOnly, onCheckedChange = { savedOnly = it; if (it) vm.loadSavedDonors() })
                 }
                 if (target == null && !showEmergency) ErrorBanner(vm.error)
-                PrimaryButton(t("Search"), vm.busy, { savedOnly = false; visible = 24; vm.search(bloodGroup, district, upazila.trim(), nearMe) })
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    PrimaryButton(t("Search"), vm.busy, { savedOnly = false; vm.search(bloodGroup, district, upazila.trim(), nearMe && district.isBlank(), 1) }, Modifier.weight(1f))
+                    OutlinedButton(onClick = { bloodGroup = ""; district = ""; upazila = ""; nearMe = true; savedOnly = false; vm.search("", "", "", true, 1) }, enabled = !vm.busy, modifier = Modifier.height(50.dp)) { Text(t("Reset")) }
+                }
                 Button(onClick = { vm.clearError(); showEmergency = true }, modifier = Modifier.fillMaxWidth().height(46.dp)) {
                     Text(t("🚨 Emergency request (nearest 5 donors)"))
                 }
@@ -115,6 +118,9 @@ fun SearchTab(vm: AppViewModel) {
         }
 
         val shown = if (savedOnly) vm.savedDonors else vm.donors
+        if (vm.searched && !savedOnly) {
+            item { Text("${vm.donorTotal} ${t("donors found")}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+        }
         if ((savedOnly || vm.searched) && shown.isEmpty() && !vm.busy) {
             item {
                 Text(
@@ -125,7 +131,7 @@ fun SearchTab(vm: AppViewModel) {
             }
         }
 
-        items(shown.take(visible), key = { it.id }) { donor ->
+        items(shown, key = { it.id }) { donor ->
             DonorCard(
                 donor = donor,
                 saved = vm.user?.savedDonors?.contains(donor.id) == true,
@@ -133,9 +139,13 @@ fun SearchTab(vm: AppViewModel) {
                 onRequest = { vm.clearError(); target = donor },
             )
         }
-        if (shown.size > visible) {
+        if (!savedOnly && vm.searched && vm.donorPages > 1) {
             item {
-                OutlinedButton(onClick = { visible += 24 }, modifier = Modifier.fillMaxWidth()) { Text(t("Show more")) }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { vm.search(bloodGroup, district, upazila.trim(), nearMe && district.isBlank(), vm.donorPage - 1) }, enabled = !vm.busy && vm.donorPage > 1, modifier = Modifier.weight(1f)) { Text(t("Previous")) }
+                    Text("${vm.donorPage} / ${vm.donorPages}", modifier = Modifier.padding(top = 14.dp), style = MaterialTheme.typography.bodyMedium)
+                    OutlinedButton(onClick = { vm.search(bloodGroup, district, upazila.trim(), nearMe && district.isBlank(), vm.donorPage + 1) }, enabled = !vm.busy && vm.donorPage < vm.donorPages, modifier = Modifier.weight(1f)) { Text(t("Next")) }
+                }
             }
         }
         item { Spacer(Modifier.height(24.dp)) }

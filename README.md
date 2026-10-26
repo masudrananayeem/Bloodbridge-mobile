@@ -1,33 +1,28 @@
-# BloodBridge — native Android (Kotlin + Jetpack Compose)
+# BloodBridge Android — Kotlin + Jetpack Compose
 
-Phase 1: Login, Register, Search donors.
-Phase 2: bottom tabs — Search (+ direct request, emergency request), Requests (My / Incoming accept-decline / Nearby),
-Donor (availability, "I donated today", blood-level body animation, history), Alerts (notifications), Profile.
-Phase 3: profile edit + photo upload (Cloudinary), organizations directory (call button), forgot password, delete account.
-  -> gradle.properties e CLOUDINARY_CLOUD_NAME ar CLOUDINARY_UPLOAD_PRESET dite hobe (web-er VITE_CLOUDINARY_* er same value).
-Phase 4: Bangla/English toggle (login screen + Profile), Google login + complete-profile step.
-  Google login: Firebase Console > Authentication > Google enabled; Project settings > Android app e SHA-1 (+ SHA-256) add
-  kore google-services.json abar download kore app/ e rakhun. (debug SHA-1: ./gradlew signingReport)
-Phase 5: Donor/Seeker mode switch (mode-wise tabs), email verification banner, saved donors, show more, public organizations directory, theme toggle, alert tap -> Requests.
-Phase 6: Client app-er moto Profile theke feedback/bug report/feature request submit + nijer feedback history dekhano. Mobile app-e admin panel ebong admin-only endpoints rakha hoyni.
-Phase 5b audit fixes: seeker phone + direct badge (incoming), accepted donor email, emergency reason, upazila filter, DOB + age, password reset + DELETE confirm, overview stats, Organizations tab in donor mode, alert icons. Privacy/Terms in-app. Baki: push notification (FCM + backend).
+Native Android client for the BloodBridge service. The admin panel and admin-only CRUD screens/endpoints are intentionally excluded.
 
-## Client feature parity\nDetailed client-facing feature checklist: `CLIENT_FEATURE_PARITY.md`. Admin panel intentionally excluded.\n\n## Run (VS Code-e code dekhben, build Android Studio-te)
-1. Android Studio install (developer.android.com/studio). File > Open > ei folder.
-2. Firebase Console > Project settings > Add app > Android, package: com.bloodbridge.app
-   - google-services.json download kore  app/google-services.json  e rakhun.
-   - Authentication > Email/Password enabled.
-3. gradle.properties e API_BASE_URL set korun (shesh-e / thakte hobe):
-       API_BASE_URL=https://YOUR-WORKER.workers.dev/api/
-   Local backend + emulator: http://10.0.2.2:5000/api/   (cleartext http-er jonno manifest-e
-   android:usesCleartextTraffic="true" lagbe — shudhu debug-er jonno)
-4. Sync > Run (emulator ba USB phone).
+## Client features
+- Firebase email/password auth, Google sign-in, verification and password reset.
+- Donor/seeker mode switching, donor search and server-side pagination, saved donors, emergency/direct requests.
+- My/incoming/nearby requests, status filtering, cancel/accept/decline and call shortcuts for available request contacts.
+- Donor availability, eligibility countdown, donation recording/history and dashboard statistics.
+- Organization directory with district/type/text filters and call/email/website actions.
+- Profile editing, profile image upload, account deletion, notification center, feedback history, Bangla/English, light/dark theme and legal links.
 
-## Build without Android Studio (GitHub Actions)
-Secrets: GOOGLE_SERVICES_JSON_BASE64, API_BASE_URL, (release-er jonno) ANDROID_KEYSTORE_BASE64,
-ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
-Actions > "Android build" > Run workflow > artifact: debug APK / release AAB.
-Build fail korle log-er error pathan.
+See `CLIENT_FEATURE_PARITY.md` for the feature audit and known gaps.
 
-## Backend CORS
-Native app browser na, tai CORS lage na.
+## Setup
+1. Open this folder in Android Studio.
+2. Add Firebase's `google-services.json` at `app/google-services.json`; enable Email/Password and Google sign-in in Firebase.
+3. Set `API_BASE_URL` in `gradle.properties` to the deployed API URL ending with `/api/`.
+4. Optional profile image upload requires `CLOUDINARY_CLOUD_NAME` and `CLOUDINARY_UPLOAD_PRESET` in `gradle.properties`.
+5. Sync Gradle and build/run from Android Studio.
+
+For Google sign-in, add the Android app's SHA-1/SHA-256 fingerprints in Firebase and download a fresh `google-services.json`.
+
+## Important verification notes
+- `google-services.json` and a Gradle wrapper are not included in this source ZIP.
+- The source could not be built in this environment because Gradle is unavailable. Build in Android Studio after completing setup.
+- Donor search now sends `page` and `limit` and expects the API response fields `donors`, `pages`, and `total`, matching the supplied web client.
+- Use HTTPS for production API traffic. The `http://10.0.2.2:5000/api/` URL is only for a local backend on an Android emulator and requires cleartext traffic to be enabled for debug builds.

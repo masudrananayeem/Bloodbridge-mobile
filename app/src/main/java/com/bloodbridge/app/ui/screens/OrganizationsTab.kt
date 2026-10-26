@@ -19,6 +19,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,7 +40,8 @@ import com.bloodbridge.app.ui.ErrorBanner
 fun OrganizationsTab(vm: AppViewModel) {
     var district by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(district, type) { vm.loadOrganizations(district, type, "") }
+    var query by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(district, type, query) { vm.loadOrganizations(district, type, query.trim()) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -49,6 +51,7 @@ fun OrganizationsTab(vm: AppViewModel) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
                 DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
                 DropdownField(t("Type"), type, Constants.orgTypes, { type = it }, anyLabel = t("Any"))
+                com.bloodbridge.app.ui.AppTextField(query, { query = it }, t("Search organizations"), placeholder = t("Name or keyword"))
                 ErrorBanner(vm.error)
             }
         }
@@ -80,6 +83,12 @@ private fun OrgCard(org: Organization) {
                     onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${org.phone}"))) },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("${t("Call")} ${org.phone}") }
+            }
+            if (org.email.isNotBlank()) {
+                TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${org.email}"))) }, modifier = Modifier.fillMaxWidth()) { Text(org.email) }
+            }
+            if (org.website.isNotBlank()) {
+                TextButton(onClick = { val url = if (org.website.startsWith("http://") || org.website.startsWith("https://")) org.website else "https://${org.website}"; context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }, modifier = Modifier.fillMaxWidth()) { Text(t("Visit website")) }
             }
         }
     }
