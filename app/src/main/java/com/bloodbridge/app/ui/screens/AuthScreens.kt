@@ -14,9 +14,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.net.Uri
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.platform.LocalContext
 import com.bloodbridge.app.ui.LanguageToggle
@@ -119,8 +116,6 @@ fun RegisterScreen(vm: AppViewModel, onGoLogin: () -> Unit) {
     var district by rememberSaveable { mutableStateOf("") }
     var upazila by rememberSaveable { mutableStateOf("") }
     var address by rememberSaveable { mutableStateOf("") }
-    var profilePhoto by rememberSaveable { mutableStateOf<Uri?>(null) }
-    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> profilePhoto = uri }
 
     Column(
         modifier = Modifier
@@ -133,9 +128,6 @@ fun RegisterScreen(vm: AppViewModel, onGoLogin: () -> Unit) {
     ) {
         Text(t("Create your account"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(t("Join the network of donors and seekers."), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedButton(onClick = { photoPicker.launch("image/*") }, enabled = !vm.busy, modifier = Modifier.fillMaxWidth()) {
-            Text(if (profilePhoto == null) t("Add profile photo (optional)") else t("Profile photo selected ✓"))
-        }
 
         AppTextField(fullName, { fullName = it }, t("Full name"))
         AppTextField(email, { email = it }, t("Email"), keyboardType = KeyboardType.Email)
@@ -151,7 +143,7 @@ fun RegisterScreen(vm: AppViewModel, onGoLogin: () -> Unit) {
 
         ErrorBanner(vm.error)
         PrimaryButton(t("Register"), vm.busy, {
-            vm.register(fullName, email, password, confirm, phone, bloodGroup, gender, dob, district, upazila, address, profilePhoto)
+            vm.register(fullName, email, password, confirm, phone, bloodGroup, gender, dob, district, upazila, address)
         })
 
         TextButton(onClick = { vm.clearError(); onGoLogin() }, modifier = Modifier.fillMaxWidth()) {

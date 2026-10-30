@@ -20,13 +20,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,9 +53,6 @@ import com.bloodbridge.app.ui.PrimaryButton
 @Composable
 fun ProfileTab(vm: AppViewModel) {
     val u = vm.user
-    var feedbackCategory by rememberSaveable { mutableStateOf("General") }
-    var feedbackMessage by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(Unit) { vm.loadFeedback() }
     var fullName by remember(u?.id) { mutableStateOf(u?.fullName.orEmpty()) }
     var phone by remember(u?.id) { mutableStateOf(u?.phone.orEmpty()) }
     var bloodGroup by remember(u?.id) { mutableStateOf(u?.bloodGroup.orEmpty()) }
@@ -66,6 +63,9 @@ fun ProfileTab(vm: AppViewModel) {
     var localError by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     var deleteText by remember { mutableStateOf("") }
+    var feedbackCategory by remember { mutableStateOf("General") }
+    var feedbackMessage by remember { mutableStateOf("") }
+    LaunchedEffect(u?.id) { if (u != null) vm.loadMyFeedback() }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) vm.uploadPhoto(uri)
@@ -125,9 +125,6 @@ fun ProfileTab(vm: AppViewModel) {
         ErrorBanner(vm.error)
         PrimaryButton(t("Save changes"), vm.busy, {
             localError = when {
-                fullName.isBlank() -> t("Full name is required.")
-                !Regex("^01[3-9]\\d{8}$").matches(phone.trim()) -> t("Enter a valid Bangladeshi phone number (01XXXXXXXXX).")
-                bloodGroup.isBlank() || district.isBlank() || upazila.isBlank() -> t("Please fill in all fields.")
                 address.isBlank() -> t("Present address is required.")
                 dob.isNotBlank() && ageFromDob(dob) == null -> t("Date of birth must be YYYY-MM-DD.")
                 else -> null
@@ -150,53 +147,53 @@ fun ProfileTab(vm: AppViewModel) {
             Text(t("Theme"), modifier = Modifier.padding(end = 8.dp))
             com.bloodbridge.app.ui.ThemeToggle()
         }
+        FeedbackPanel(
+            category = feedbackCategory, onCategoryChange = { feedbackCategory = it },
+            message = feedbackMessage, onMessageChange = { feedbackMessage = it },
+            items = vm.myFeedback, busy = vm.busy, error = vm.error,
+            onSend = { vm.sendFeedback(feedbackCategory, feedbackMessage) },
+        )
         com.bloodbridge.app.ui.LegalLinks()
-
-        androidx.compose.material3.HorizontalDivider()
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            horizontalAlignment = Alignment.Start,
-        ) {
-            Text(t("Feedback & support"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(t("Share a suggestion, report a bug, or send us a complaint."), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            DropdownField("Category", feedbackCategory, listOf("General", "Bug Report", "Feature Request", "Complaint", "Praise"), { feedbackCategory = it })
-            OutlinedTextField(
-                value = feedbackMessage,
-                onValueChange = { feedbackMessage = it },
-                label = { Text(t("Your feedback")) },
-                placeholder = { Text(t("Tell us what we can improve…")) },
-                minLines = 3,
-                maxLines = 5,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            PrimaryButton(t("Send feedback"), vm.busy, {
-                vm.sendFeedback(feedbackCategory, feedbackMessage) { feedbackMessage = "" }
-            })
-            if (vm.feedback.isNotEmpty()) {
-                Text(t("My feedback"), fontWeight = FontWeight.SemiBold)
-                vm.feedback.take(5).forEach { item ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    ) {
-                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(item.category, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                                Text(t(item.status), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                            }
-                            Text(item.message, style = MaterialTheme.typography.bodyMedium)
-                            item.createdAt?.let { Text(it.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        }
-                    }
-                }
-            }
-            ErrorBanner(vm.error)
-        }
         Box(Modifier.height(8.dp))
         OutlinedButton(onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth()) { Text(t("Log out")) }
         TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
             Text(t("Delete my account"), color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+
+@Composable
+private fun FeedbackPanel(
+    category: String, onCategoryChange: (String) -> Unit,
+    message: String, onMessageChange: (String) -> Unit,
+    items: List<com.bloodbridge.app.data.FeedbackItem>, busy: Boolean, error: String?, onSend: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(t("Send Feedback"), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(t("Share a suggestion, report a problem, or tell us about your experience."), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        DropdownField(t("Category"), category, listOf("General", "Bug Report", "Feature Request", "Complaint", "Praise"), onCategoryChange)
+        OutlinedTextField(
+            value = message, onValueChange = onMessageChange, modifier = Modifier.fillMaxWidth(),
+            label = { Text(t("Your Message")) }, placeholder = { Text(t("Tell us what's on your mind...")) },
+            minLines = 3, maxLines = 5,
+        )
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        PrimaryButton(t("Send Feedback"), busy, onSend)
+        if (items.isNotEmpty()) {
+            Text(t("My Feedback History"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            items.forEach { item ->
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(item.category, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                            Text(if (item.status == "reviewed") t("Reviewed") else t("New"), style = MaterialTheme.typography.labelSmall)
+                        }
+                        Text(item.message, style = MaterialTheme.typography.bodyMedium)
+                        item.createdAt?.let { Text(it.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                }
+            }
         }
     }
 }

@@ -1,29 +1,62 @@
 # BloodBridge Android — Kotlin + Jetpack Compose
 
-Native Android client for the BloodBridge service. The admin panel and admin-only CRUD screens/endpoints are intentionally excluded.
+This is the **client-only Android app** for BloodBridge. It contains no admin dashboard or admin navigation. Existing donor/seeker workflows are retained: authentication, profile completion/editing, donor discovery, saved donors, blood requests, request responses, donor availability, donation history, organizations, in-app alerts, feedback, language/theme preferences and legal pages.
 
-## Client features
-- Firebase email/password auth, Google sign-in, verification and password reset.
-- Donor/seeker mode switching, donor search and server-side pagination, saved donors, emergency/direct requests.
-- My/incoming/nearby requests, status filtering, cancel/accept/decline and call shortcuts for available request contacts.
-- Donor availability, eligibility countdown, donation recording/history and dashboard statistics.
-- Organization directory with district/type/text filters and call/email/website actions in both donor and seeker modes.
-- Profile editing, profile image upload, account deletion, notification center, feedback history, Bangla/English, light/dark theme and legal links.
+## 1. Open and run
 
-See `CLIENT_FEATURE_PARITY.md` for the feature audit and known gaps.
+1. Extract the project and open the `BloodBridge-Android` folder in Android Studio.
+2. Use JDK 17 and let Android Studio sync the Gradle project.
+3. Add your Firebase Android config at `app/google-services.json` (package: `com.bloodbridge.app`).
+4. Set the environment values below in the root `gradle.properties` (do not commit real secrets or private configuration to a public repository).
+5. Build > Make Project, then run on an emulator or Android device.
 
-## Setup
-1. Open this folder in Android Studio.
-2. Add Firebase's `google-services.json` at `app/google-services.json`; enable Email/Password and Google sign-in in Firebase.
-3. Set `API_BASE_URL` in `gradle.properties` to the deployed API URL ending with `/api/`.
-4. Optional profile image upload requires `CLOUDINARY_CLOUD_NAME` and `CLOUDINARY_UPLOAD_PRESET` in `gradle.properties`.
-5. Sync Gradle and build/run from Android Studio. The project uses Gradle 8.9 / Android Gradle Plugin 8.7.3 and Java 17.
-6. For optional profile photo upload, configure the Cloudinary cloud name and unsigned upload preset. Do not commit credentials or Firebase configuration to a public repository.
+## 2. Backend and service configuration
 
-For Google sign-in, add the Android app's SHA-1/SHA-256 fingerprints in Firebase and download a fresh `google-services.json`.
+The Android app does not use the web client's Vite `.env`. It reads Gradle project properties and exposes only the values needed by the app through generated `BuildConfig` constants.
 
-## Important verification notes
-- `google-services.json` is intentionally not included. Add Firebase configuration before running auth flows. The included `gradlew` / `gradlew.bat` bootstrap scripts download the official Gradle 8.9 distribution over HTTPS on first run because the standard wrapper JAR is not included. The CI workflow can compile without Firebase config when the secret is absent, but runtime authentication cannot work until configuration is supplied.
-- A full Android compile could not be run in this environment because Gradle is unavailable and network access to download it is blocked. Build in Android Studio after completing setup.
-- Donor search now sends `page` and `limit` and expects the API response fields `donors`, `pages`, and `total`, matching the supplied web client. Donor cards show profile photos or initials and eligibility countdowns when supplied by the API.
-- Use HTTPS for production API traffic. The default API URL is a placeholder (`https://YOUR-WORKER.workers.dev/api/`). Replace it with your deployed HTTPS API URL before running the app.
+```properties
+# Root gradle.properties — replace with your real deployed API origin.
+# Must include /api/ and end with a slash.
+API_BASE_URL=https://YOUR-REAL-WORKER.workers.dev/api/
+
+# Same public Cloudinary unsigned-upload configuration used by the web client.
+CLOUDINARY_CLOUD_NAME=YOUR_CLOUDINARY_CLOUD_NAME
+CLOUDINARY_UPLOAD_PRESET=YOUR_UNSIGNED_UPLOAD_PRESET
+
+# Public website base URL (no trailing slash).
+WEB_BASE_URL=https://YOUR_OFFICIAL_BLOODBRIDGE_SITE
+```
+
+For the Android emulator with a local backend, use `http://10.0.2.2:PORT/api/` and configure cleartext traffic only for a local debug build. Production must use HTTPS. Never put backend secrets, Firebase service-account credentials, private API keys or Cloudinary API secrets in the Android app; values compiled into an APK can be extracted. Firebase Android client configuration is not a service-account secret, but Firebase security must be enforced with Firebase/Backend rules.
+
+`WEB_BASE_URL` is used for website legal-page links. The app also displays its Privacy Policy and Terms of Service offline inside the app. The web routes are `/privacy-policy` and `/terms`.
+
+## 3. Firebase setup
+
+- Create/register Android app with package `com.bloodbridge.app` in Firebase Console.
+- Download `google-services.json` and place it in `app/`.
+- Enable Email/Password and Google sign-in in Firebase Authentication if you use those flows.
+- For Google sign-in, configure the Android SHA-1/SHA-256 fingerprints in Firebase and download the updated config file.
+
+## 4. Features
+
+- Email/password registration and login, Google sign-in, email verification, password reset and profile completion.
+- Donor/seeker mode, donor search, saved donors and blood request workflows.
+- Incoming, nearby and own requests; accept/reject/cancel actions.
+- Availability, donation recording/history, organizations and in-app notifications.
+- Profile editing, optional photo upload, account deletion, feedback submission/history.
+- Bangla/English, light/dark theme, in-app Privacy Policy and Terms.
+
+The app is intentionally client-only; admin screens are excluded.
+
+## 5. Privacy policy notes
+
+The in-app Privacy Policy is provided in English and Bangla and is available offline. It describes the current Android permissions and data flows. The current manifest requests Internet access only; it does not request GPS/location, contacts, microphone or camera permission. District/upazila/address are entered by the user. Profile photos are selected through Android's photo picker.
+
+Before publishing, verify that the backend's actual data retention/deletion behavior, contact masking, Firebase setup, Cloudinary configuration and public website contact channel match the policy. If you add GPS, push notifications, analytics, ads or another SDK later, update the policy and permission disclosures before release.
+
+## 6. Build verification
+
+A successful ZIP integrity check is not an Android build test. Run Gradle Sync and `assembleDebug` in Android Studio or CI with a valid `google-services.json` and real `API_BASE_URL`. Then test login, registration, donor search, create/respond/cancel request, profile/photo update, feedback, notification reads and account deletion against the deployed backend.
+
+The included GitHub Actions workflow uses Gradle 8.9 and JDK 17. Configure `GOOGLE_SERVICES_JSON_BASE64` and `API_BASE_URL` repository secrets before running it. Release signing additionally requires the documented keystore secrets.

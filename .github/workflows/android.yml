@@ -14,24 +14,10 @@ jobs:
         with: { distribution: temurin, java-version: 17 }
       - uses: gradle/actions/setup-gradle@v4
         with: { gradle-version: "8.9" }
-      - name: Optional Firebase configuration
-        env:
-          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
-        run: |
-          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
-            echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > app/google-services.json
-          else
-            echo "Firebase config secret not set; compile-only build will run without google-services.json."
-          fi
+      - name: google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > app/google-services.json
       - name: Debug APK (compile check)
-        env:
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-        run: |
-          if [ -n "$API_BASE_URL" ]; then
-            gradle assembleDebug -PAPI_BASE_URL="$API_BASE_URL"
-          else
-            gradle assembleDebug
-          fi
+        run: gradle assembleDebug -PAPI_BASE_URL=${{ secrets.API_BASE_URL }}
       - uses: actions/upload-artifact@v4
         with:
           name: bloodbridge-debug-apk
@@ -40,11 +26,7 @@ jobs:
         if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/release.jks
-          if [ -n "${{ secrets.API_BASE_URL }}" ]; then
-            gradle bundleRelease -PAPI_BASE_URL="${{ secrets.API_BASE_URL }}"
-          else
-            gradle bundleRelease
-          fi
+          gradle bundleRelease -PAPI_BASE_URL=${{ secrets.API_BASE_URL }}
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

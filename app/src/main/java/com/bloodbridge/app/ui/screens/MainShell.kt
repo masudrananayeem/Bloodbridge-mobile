@@ -27,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.font.FontWeight
 import com.bloodbridge.app.i18n.t
 import com.bloodbridge.app.ui.AppViewModel
 
@@ -46,12 +45,10 @@ private val allTabs = mapOf(
 fun MainShell(vm: AppViewModel) {
     val mode = vm.user?.activeMode ?: "donor"
     // Same idea as the web app: donor mode and seeker mode show different tabs.
-    val tabIds = if (mode == "donor") listOf("requests", "donor", "orgs", "alerts", "profile") else listOf("find", "requests", "orgs", "alerts", "profile")
+    val tabIds = if (mode == "donor") listOf("requests", "donor", "orgs", "alerts", "profile") else listOf("find", "requests", "alerts", "profile")
     var selected by rememberSaveable { mutableStateOf("requests") }
     val current = if (selected in tabIds) selected else tabIds.first()
     val snackbar = remember { SnackbarHostState() }
-
-    LaunchedEffect(vm.user?.id) { if (vm.user != null) vm.loadNotifications() }
 
     LaunchedEffect(vm.info) {
         vm.info?.let {
@@ -62,19 +59,6 @@ fun MainShell(vm: AppViewModel) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
-        topBar = {
-            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 1.dp) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("BloodBridge", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
-                        Text(t("Connecting blood donors with people in need"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    TextButton(onClick = { vm.clearError(); selected = "alerts"; vm.loadNotifications() }) {
-                        Text("🔔" + if (vm.unreadCount > 0) " ${vm.unreadCount}" else "")
-                    }
-                }
-            }
-        },
         bottomBar = {
             NavigationBar {
                 tabIds.forEach { id ->
@@ -115,9 +99,7 @@ private fun ModeSwitch(mode: String, busy: Boolean, onChange: (String) -> Unit) 
         listOf("donor" to "Blood Donor", "seeker" to "Blood Seeker").forEach { (value, text) ->
             val label = if (value == "donor") "❤ " + t("Blood Donor") else "🔍 " + t("Blood Seeker")
             if (mode == value) {
-                Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.large, modifier = Modifier.weight(1f)) {
-                    Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp), color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.SemiBold)
-                }
+                Button(onClick = {}, modifier = Modifier.weight(1f)) { Text(label) }
             } else {
                 OutlinedButton(onClick = { onChange(value) }, enabled = !busy, modifier = Modifier.weight(1f)) { Text(label) }
             }

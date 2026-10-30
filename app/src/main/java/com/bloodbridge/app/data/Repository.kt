@@ -8,6 +8,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import com.bloodbridge.app.BuildConfig
+import com.bloodbridge.app.R
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.GoogleAuthProvider
@@ -70,7 +71,7 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
 
     suspend fun register(
         fullName: String, email: String, password: String, phone: String, bloodGroup: String,
-        gender: String, dateOfBirth: String, district: String, upazila: String, address: String, photoURL: String? = null,
+        gender: String, dateOfBirth: String, district: String, upazila: String, address: String,
     ): User {
         val cred = auth.createUserWithEmailAndPassword(email.trim(), password).await()
         val fbUser = cred.user!!
@@ -78,29 +79,25 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
         runCatching { fbUser.sendEmailVerification().await() }
         val idToken = fbUser.getIdToken(true).await().token!!
         val res = api.register(
-            RegisterBody(idToken, fullName, email.trim(), phone, bloodGroup, gender, dateOfBirth, district, upazila, address, photoURL)
+            RegisterBody(idToken, fullName, email.trim(), phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
         )
         session.token = res.token
         return res.user
     }
 
-    suspend fun searchDonors(bloodGroup: String?, district: String?, upazila: String?, nearMe: Boolean, page: Int = 1, limit: Int = 24): DonorsResponse =
+    suspend fun searchDonors(bloodGroup: String?, district: String?, upazila: String?, nearMe: Boolean): List<Donor> =
         api.searchDonors(
             bloodGroup?.takeIf { it.isNotBlank() },
             district?.takeIf { it.isNotBlank() },
             upazila?.takeIf { it.isNotBlank() },
             if (nearMe) true else null,
-            page,
-            limit,
-        )
+        ).donors
 
     suspend fun me(): User = api.me().user
 
     /** Google sign-in (Credential Manager) -> Firebase -> backend /auth/google. May return profileComplete=false. */
     suspend fun googleLogin(activityContext: Context): User {
-        val clientIdResource = activityContext.resources.getIdentifier("default_web_client_id", "string", activityContext.packageName)
-        require(clientIdResource != 0) { t("Google sign-in is not configured. Add Firebase google-services.json first.") }
-        val option = GetSignInWithGoogleOption.Builder(activityContext.getString(clientIdResource)).build()
+        val option = GetSignInWithGoogleOption.Builder(activityContext.getString(R.string.default_web_client_id)).build()
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
         val result = CredentialManager.create(activityContext).getCredential(activityContext, request)
         val credential = result.credential
@@ -118,6 +115,10 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
     suspend fun savedDonors() = api.savedDonors().donors
     suspend fun toggleSaved(id: String) = api.toggleSaved(id)
     suspend fun setMode(mode: String) = api.setMode(ModeBody(mode))
+    suspend fun adminAnalytics() = api.adminAnalytics()
+    suspend fun saveOrg(id: String?, body: OrgBody) = if (id == null) api.createOrg(body) else api.updateOrg(id, body)
+    suspend fun verifyOrg(id: String) = api.verifyOrg(id)
+    suspend fun deleteOrg(id: String) = api.deleteOrg(id)
 
     /** Email-verification helpers (Google accounts are always verified). */
     fun isEmailVerified(): Boolean = auth.currentUser?.isEmailVerified ?: true
@@ -129,6 +130,13 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
         auth.currentUser?.sendEmailVerification()?.await()
     }
 
+    suspend fun adminStats() = api.adminStats().stats
+    suspend fun adminUsers(search: String?, page: Int) =
+        api.adminUsers(search?.takeIf { it.isNotBlank() }, page, 24)
+    suspend fun adminVerify(id: String) = api.adminVerify(id)
+    suspend fun adminDeleteUser(id: String) = api.adminDeleteUser(id)
+    suspend fun adminRequests(status: String?) = api.adminRequests(status?.takeIf { it.isNotBlank() }).requests
+    suspend fun adminSetStatus(id: String, status: String) = api.adminSetStatus(id, StatusBody(status))
 
     suspend fun createRequest(body: CreateRequestBody) = api.createRequest(body)
     suspend fun myRequests() = api.myRequests().requests
@@ -140,14 +148,13 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
     suspend fun recordDonation(): User = api.recordDonation(EmptyBody()).user
     suspend fun history() = api.donationHistory().history
     suspend fun notifications() = api.notifications()
-    suspend fun myFeedback() = api.myFeedback().feedback
-    suspend fun sendFeedback(category: String, message: String) = api.sendFeedback(FeedbackBody(category, message))
     suspend fun markRead(id: String) = api.markRead(id)
     suspend fun markAllRead() = api.markAllRead()
 
     suspend fun updateProfile(body: UpdateProfileBody): User = api.updateProfile(body).user
 
-    suspend fun organizationDetails(id: String) = api.organizationDetails(id).organization
+    suspend fun sendFeedback(category: String, message: String) { api.sendFeedback(FeedbackBody(category, message)) }
+    suspend fun apiMyFeedback(): List<FeedbackItem> = api.myFeedback().feedback
 
     suspend fun organizations(district: String?, type: String?, search: String?) =
         api.organizations(

@@ -33,7 +33,6 @@ import com.bloodbridge.app.ui.PrimaryButton
 /** Shown after a first-time Google sign-in: the backend needs blood group, phone, district, etc. */
 @Composable
 fun CompleteProfileScreen(vm: AppViewModel) {
-    var fullName by rememberSaveable { mutableStateOf(vm.user?.fullName.orEmpty()) }
     var phone by rememberSaveable { mutableStateOf("") }
     var bloodGroup by rememberSaveable { mutableStateOf("") }
     var district by rememberSaveable { mutableStateOf("") }
@@ -49,7 +48,6 @@ fun CompleteProfileScreen(vm: AppViewModel) {
         Text(t("Complete your profile"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(t("We need a few more details before you can find or become a donor."), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        AppTextField(fullName, { fullName = it }, t("Full name"))
         AppTextField(phone, { phone = it }, t("Phone (01XXXXXXXXX)"), keyboardType = KeyboardType.Phone)
         DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it })
         DropdownField(t("District"), district, Constants.districts, { district = it })
@@ -58,7 +56,7 @@ fun CompleteProfileScreen(vm: AppViewModel) {
         AppTextField(dob, { dob = it }, t("Date of birth"), placeholder = "YYYY-MM-DD", keyboardType = KeyboardType.Number)
 
         ErrorBanner(vm.error)
-        PrimaryButton(t("Save and continue"), vm.busy, { vm.completeProfile(fullName, phone, bloodGroup, district, upazila, address, dob) })
+        PrimaryButton(t("Save and continue"), vm.busy, { vm.completeProfile(phone, bloodGroup, district, upazila, address, dob) })
         TextButton(onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth()) { Text(t("Log out")) }
     }
 }

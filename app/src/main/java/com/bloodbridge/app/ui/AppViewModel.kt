@@ -9,14 +9,18 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.bloodbridge.app.data.ApiProvider
 import com.bloodbridge.app.data.AppNotification
-import com.bloodbridge.app.data.FeedbackItem
 import com.bloodbridge.app.data.BloodRequest
 import com.bloodbridge.app.data.CreateRequestBody
 import com.bloodbridge.app.data.Donation
+import com.bloodbridge.app.data.FeedbackBody
+import com.bloodbridge.app.data.FeedbackItem
+import com.bloodbridge.app.data.AnalyticsResponse
 import com.bloodbridge.app.data.Organization
+import com.bloodbridge.app.data.OrgBody
 import com.bloodbridge.app.data.UpdateProfileBody
 import android.content.Context
 import android.net.Uri
+import com.bloodbridge.app.data.AdminStats
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.bloodbridge.app.data.Donor
@@ -42,12 +46,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var searched by mutableStateOf(false)
         private set
-    var donorPage by mutableStateOf(1)
-        private set
-    var donorPages by mutableStateOf(1)
-        private set
-    var donorTotal by mutableStateOf(0)
-        private set
 
     var info by mutableStateOf<String?>(null)
         private set
@@ -65,17 +63,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var history by mutableStateOf<List<Donation>>(emptyList())
         private set
+    var myFeedback by mutableStateOf<List<FeedbackItem>>(emptyList())
+        private set
 
     var organizations by mutableStateOf<List<Organization>>(emptyList())
-        private set
-    var selectedOrganization by mutableStateOf<Organization?>(null)
         private set
 
     var savedDonors by mutableStateOf<List<Donor>>(emptyList())
         private set
     var emailVerified by mutableStateOf(true)
         private set
-    var feedback by mutableStateOf<List<FeedbackItem>>(emptyList())
+    var analytics by mutableStateOf(AnalyticsResponse())
+        private set
+
+    // ---- admin ----
+    var adminStats by mutableStateOf(AdminStats())
+        private set
+    var adminUsers by mutableStateOf<List<User>>(emptyList())
+        private set
+    var adminUsersPage by mutableStateOf(1)
+        private set
+    var adminUsersPages by mutableStateOf(1)
+        private set
+    var adminRequests by mutableStateOf<List<BloodRequest>>(emptyList())
         private set
 
     init {
@@ -96,7 +106,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun register(
         fullName: String, email: String, password: String, confirm: String, phone: String,
-        bloodGroup: String, gender: String, dateOfBirth: String, district: String, upazila: String, address: String, photoUri: Uri? = null,
+        bloodGroup: String, gender: String, dateOfBirth: String, district: String, upazila: String, address: String,
     ) {
         val missing = listOf(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
             .any { it.isBlank() }
@@ -107,40 +117,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             !Regex("^01[3-9]\\d{8}$").matches(phone) -> error = t("Enter a valid Bangladeshi phone number (01XXXXXXXXX).")
             !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dateOfBirth) -> error = t("Date of birth must be YYYY-MM-DD.")
             else -> launchBusy {
-                val photoUrl = photoUri?.let { uri ->
-                    val bytes = withContext(Dispatchers.IO) {
-                        getApplication<Application>().contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    } ?: throw IllegalStateException(t("Could not read the selected image."))
-                    repo.uploadPhoto(bytes)
-                }
-                user = repo.register(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address, photoUrl)
+                user = repo.register(fullName, email, password, phone, bloodGroup, gender, dateOfBirth, district, upazila, address)
                 emailVerified = repo.isEmailVerified()
             }
         }
     }
 
-    fun loadSearchScreen() {
+    fun search(bloodGroup: String, district: String, upazila: String, nearMe: Boolean) {
         launchBusy {
-            myRequests = repo.myRequests()
-            incoming = repo.incoming()
-            nearby = repo.nearby()
-            savedDonors = repo.savedDonors()
-            val result = repo.searchDonors(null, null, null, true, 1, 24)
-            donors = result.donors
-            donorPage = 1
-            donorPages = result.pages.coerceAtLeast(1)
-            donorTotal = result.total
-            searched = true
-        }
-    }
-
-    fun search(bloodGroup: String, district: String, upazila: String, nearMe: Boolean, page: Int = 1) {
-        launchBusy {
-            val result = repo.searchDonors(bloodGroup, district, upazila, nearMe, page, 24)
-            donors = result.donors
-            donorPage = page
-            donorPages = result.pages.coerceAtLeast(1)
-            donorTotal = result.total
+            donors = repo.searchDonors(bloodGroup, district, upazila, nearMe)
             searched = true
         }
     }
@@ -245,34 +230,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun loadOrganizations(district: String, type: String, search: String) {
-        launchBusy { organizations = repo.organizations(district, type, search) }
+
+    fun loadMyFeedback() {
+        launchBusy { myFeedback = repo.apiMyFeedback() }
     }
 
-    fun openOrganization(organization: Organization) {
-        selectedOrganization = organization
-        if (organization.id.isNotBlank()) {
-            launchBusy { selectedOrganization = repo.organizationDetails(organization.id) }
-        }
-    }
-
-    fun closeOrganization() { selectedOrganization = null }
-
-    fun loadFeedback() {
-        launchBusy { feedback = repo.myFeedback() }
-    }
-
-    fun sendFeedback(category: String, message: String, onDone: () -> Unit = {}) {
-        if (message.trim().length < 5) {
-            error = t("Please enter at least 5 characters.")
-            return
-        }
+    fun sendFeedback(category: String, message: String) {
+        if (message.trim().length < 5) { error = t("Please enter at least 5 characters."); return }
         launchBusy {
             repo.sendFeedback(category, message.trim())
-            feedback = repo.myFeedback()
-            info = t("Feedback sent. Thank you!")
-            onDone()
+            myFeedback = repo.apiMyFeedback()
+            info = t("Feedback sent successfully.")
         }
+    }
+
+    fun loadOrganizations(district: String, type: String, search: String) {
+        launchBusy { organizations = repo.organizations(district, type, search) }
     }
 
     fun resetPassword(email: String, onDone: () -> Unit) {
@@ -329,24 +302,100 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun loadAnalytics() {
+        launchBusy { analytics = repo.adminAnalytics() }
+    }
+
+    fun loadAdminOrgs() {
+        launchBusy { organizations = repo.organizations(null, null, null) }
+    }
+
+    fun saveOrg(id: String?, body: OrgBody, onDone: () -> Unit) {
+        launchBusy {
+            repo.saveOrg(id, body)
+            organizations = repo.organizations(null, null, null)
+            info = t("Organization saved.")
+            onDone()
+        }
+    }
+
+    fun verifyOrg(id: String) {
+        launchBusy {
+            repo.verifyOrg(id)
+            organizations = repo.organizations(null, null, null)
+        }
+    }
+
+    fun deleteOrg(id: String) {
+        launchBusy {
+            repo.deleteOrg(id)
+            organizations = repo.organizations(null, null, null)
+            info = t("Organization deleted.")
+        }
+    }
+
     fun googleLogin(context: Context) {
         info = null
         launchBusy { user = repo.googleLogin(context); emailVerified = true }
     }
 
-    fun completeProfile(fullName: String, phone: String, bloodGroup: String, district: String, upazila: String, address: String, dob: String) {
+    fun completeProfile(phone: String, bloodGroup: String, district: String, upazila: String, address: String, dob: String) {
         when {
-            listOf(fullName, phone, bloodGroup, district, upazila, address, dob).any { it.isBlank() } -> error = t("Please fill in all fields.")
+            listOf(phone, bloodGroup, district, upazila, address).any { it.isBlank() } -> error = t("Please fill in all fields.")
             !Regex("^01[3-9]\\d{8}$").matches(phone) -> error = t("Enter a valid Bangladeshi phone number (01XXXXXXXXX).")
-            !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dob) -> error = t("Date of birth must be YYYY-MM-DD.")
+            dob.isNotBlank() && !Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(dob) -> error = t("Date of birth must be YYYY-MM-DD.")
             else -> launchBusy {
                 user = repo.updateProfile(
                     UpdateProfileBody(
-                        fullName = fullName.trim(), phone = phone, bloodGroup = bloodGroup, district = district, upazila = upazila.trim(),
-                        address = address.trim(), dateOfBirth = dob,
+                        phone = phone, bloodGroup = bloodGroup, district = district, upazila = upazila.trim(),
+                        address = address.trim(), dateOfBirth = dob.ifBlank { null },
                     )
                 )
             }
+        }
+    }
+
+    fun loadAdminStats() {
+        launchBusy { adminStats = repo.adminStats() }
+    }
+
+    fun loadAdminUsers(search: String, loadMore: Boolean = false) {
+        launchBusy {
+            val page = if (loadMore) adminUsersPage + 1 else 1
+            val res = repo.adminUsers(search, page)
+            adminUsers = if (loadMore) adminUsers + res.users else res.users
+            adminUsersPage = res.page
+            adminUsersPages = res.pages
+        }
+    }
+
+    fun adminVerify(id: String, search: String) {
+        launchBusy {
+            repo.adminVerify(id)
+            val res = repo.adminUsers(search, 1)
+            adminUsers = res.users; adminUsersPage = res.page; adminUsersPages = res.pages
+            info = t("Verification updated.")
+        }
+    }
+
+    fun adminDeleteUser(id: String, search: String) {
+        launchBusy {
+            repo.adminDeleteUser(id)
+            val res = repo.adminUsers(search, 1)
+            adminUsers = res.users; adminUsersPage = res.page; adminUsersPages = res.pages
+            info = t("User deleted.")
+        }
+    }
+
+    fun loadAdminRequests(status: String) {
+        launchBusy { adminRequests = repo.adminRequests(status) }
+    }
+
+    fun adminSetStatus(id: String, status: String, filter: String) {
+        launchBusy {
+            repo.adminSetStatus(id, status)
+            adminRequests = repo.adminRequests(filter)
+            info = t("Status updated.")
         }
     }
 
@@ -355,7 +404,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         user = null
         donors = emptyList()
         searched = false
-        savedDonors = emptyList(); feedback = emptyList()
+        adminUsers = emptyList(); adminRequests = emptyList(); savedDonors = emptyList()
         myRequests = emptyList(); incoming = emptyList(); nearby = emptyList()
         notifications = emptyList(); unreadCount = 0; history = emptyList()
     }

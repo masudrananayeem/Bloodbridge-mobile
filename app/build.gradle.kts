@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -15,7 +16,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-        val apiBase = (project.findProperty("API_BASE_URL") as String?) ?: "https://YOUR-WORKER.workers.dev/api/"
+        val apiBase = (project.findProperty("API_BASE_URL") as String?) ?: "http://10.0.2.2:5000/api/"
         buildConfigField("String", "API_BASE_URL", "\"$apiBase\"")
         val cloudName = (project.findProperty("CLOUDINARY_CLOUD_NAME") as String?) ?: ""
         val uploadPreset = (project.findProperty("CLOUDINARY_UPLOAD_PRESET") as String?) ?: ""
@@ -88,10 +89,4 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
-}
-
-// Apply Google Services only after the developer adds Firebase configuration.
-// This keeps the source project syncable before google-services.json is supplied.
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
 }

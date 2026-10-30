@@ -19,6 +19,12 @@ import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
 interface BloodBridgeApi {
+    @POST("feedback")
+    suspend fun sendFeedback(@Body body: FeedbackBody): OkResponse
+
+    @GET("feedback/my")
+    suspend fun myFeedback(): FeedbackResponse
+
     @POST("auth/login")
     suspend fun login(@Body body: LoginBody): AuthResponse
 
@@ -27,6 +33,28 @@ interface BloodBridgeApi {
 
     @POST("auth/google")
     suspend fun google(@Body body: GoogleBody): AuthResponse
+
+    @GET("admin/stats")
+    suspend fun adminStats(): StatsResponse
+
+    @GET("admin/users")
+    suspend fun adminUsers(
+        @Query("search") search: String?,
+        @Query("page") page: Int,
+        @Query("limit") limit: Int,
+    ): AdminUsersResponse
+
+    @PATCH("admin/users/{id}/verify")
+    suspend fun adminVerify(@Path("id") id: String): OkResponse
+
+    @DELETE("admin/users/{id}")
+    suspend fun adminDeleteUser(@Path("id") id: String): OkResponse
+
+    @GET("admin/requests")
+    suspend fun adminRequests(@Query("status") status: String?): RequestsResponse
+
+    @PATCH("admin/requests/{id}/status")
+    suspend fun adminSetStatus(@Path("id") id: String, @Body body: StatusBody): OkResponse
 
     @GET("auth/me")
     suspend fun me(): MeResponse
@@ -37,8 +65,6 @@ interface BloodBridgeApi {
         @Query("district") district: String?,
         @Query("upazila") upazila: String?,
         @Query("nearMe") nearMe: Boolean?,
-        @Query("page") page: Int?,
-        @Query("limit") limit: Int?,
     ): DonorsResponse
 
     @POST("requests")
@@ -74,9 +100,6 @@ interface BloodBridgeApi {
     @DELETE("users/me")
     suspend fun deleteMe(): OkResponse
 
-    @GET("organizations/{id}")
-    suspend fun organizationDetails(@Path("id") id: String): OrganizationResponse
-
     @GET("organizations")
     suspend fun organizations(
         @Query("district") district: String?,
@@ -93,11 +116,20 @@ interface BloodBridgeApi {
     @PATCH("users/mode")
     suspend fun setMode(@Body body: ModeBody): ModeResponse
 
-    @POST("feedback")
-    suspend fun sendFeedback(@Body body: FeedbackBody): OkResponse
+    @GET("admin/analytics")
+    suspend fun adminAnalytics(): AnalyticsResponse
 
-    @GET("feedback/my")
-    suspend fun myFeedback(): FeedbackListResponse
+    @POST("organizations")
+    suspend fun createOrg(@Body body: OrgBody): OkResponse
+
+    @PUT("organizations/{id}")
+    suspend fun updateOrg(@Path("id") id: String, @Body body: OrgBody): OkResponse
+
+    @PATCH("organizations/{id}/verify")
+    suspend fun verifyOrg(@Path("id") id: String): OkResponse
+
+    @DELETE("organizations/{id}")
+    suspend fun deleteOrg(@Path("id") id: String): OkResponse
 
     @GET("notifications")
     suspend fun notifications(): NotificationsResponse
