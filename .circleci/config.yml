@@ -1,0 +1,439 @@
+# CircleCI CI/CD Pipeline for BloodBridge Android
+# Maintainer: mosabbir-maruf
+version: 2.1
+
+executors:
+  android_executor:
+    docker:
+      - image: cimg/android:2024.10.1
+    resource_class: large
+    environment:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dkotlin.compiler.execution.strategy=in-process -Dorg.gradle.jvmargs=-Xmx2048m"
+
+commands:
+  setup_environment:
+    description: "Ensure gradlew is executable and Android build-tools are in PATH"
+    steps:
+      - run:
+          name: "Setup Build Environment"
+          command: |
+            chmod +x ./gradlew
+            BUILD_TOOLS=$(find ${ANDROID_HOME:-/home/circleci/android-sdk}/build-tools -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)
+            if [ -n "$BUILD_TOOLS" ]; then
+              echo "export PATH=\"$BUILD_TOOLS:\$PATH\"" >> "$BASH_ENV"
+            fi
+
+  restore_all_caches:
+    description: "Restore Gradle wrapper and dependency caches"
+    steps:
+      - restore_cache:
+          name: "Restore Gradle wrapper distribution cache"
+          keys:
+            - gradle-wrapper-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      - restore_cache:
+          name: "Restore Gradle dependency and build cache"
+          keys:
+            - gradle-deps-v1-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}-{{ .BuildNum }}
+            - gradle-deps-v1-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}-
+            - gradle-deps-v1-
+
+  save_gradle_deps_cache:
+    description: "Clean lockfiles and save updated Gradle dependency and build cache"
+    steps:
+      - run:
+          name: "Prune stale Gradle locks"
+          command: |
+            find ~/.gradle/caches/ -name "*.lock" -type f -delete 2>/dev/null || true
+            find ~/.gradle/caches/ -name "file-access.properties" -type f -delete 2>/dev/null || true
+      - save_cache:
+          name: "Save Gradle dependency and build cache"
+          paths:
+            - ~/.gradle/caches
+          key: gradle-deps-v1-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}-{{ .BuildNum }}
+
+  package_apk:
+    description: "Standardize packaging, checksum, and build metadata generation for an APK"
+    parameters:
+      build_type:
+        type: string
+      apk_src:
+        type: string
+      apk_name:
+        type: string
+      is_signed:
+        type: boolean
+        default: false
+    steps:
+      - run:
+          name: "Package and generate metadata for << parameters.build_type >> APK"
+          command: |
+            mkdir -p artifacts
+            if [ ! -f "<< parameters.apk_src >>" ]; then
+              echo "ERROR: Expected APK not found at << parameters.apk_src >>" >&2
+              exit 1
+            fi
+
+            cp "<< parameters.apk_src >>" "artifacts/<< parameters.apk_name >>"
+            (cd artifacts && sha256sum "<< parameters.apk_name >>" > "<< parameters.apk_name >>.sha256")
+            APK_SHA=$(cut -d' ' -f1 "artifacts/<< parameters.apk_name >>.sha256")
+
+            cat \<<EOF > artifacts/build-info.txt
+            BloodBridge Android Build Information
+            =====================================
+            Maintainer:  mosabbir-maruf
+            Build Type:  << parameters.build_type >>
+            Git Commit:  ${CIRCLE_SHA1:-unknown}
+            Git Branch:  ${CIRCLE_BRANCH:-none}
+            Git Tag:     ${CIRCLE_TAG:-none}
+            Build Time:  $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+            CI Workflow: ${CIRCLE_WORKFLOW_ID:-local}
+            CI Job:      ${CIRCLE_BUILD_NUM:-local}
+            APK File:    << parameters.apk_name >>
+            SHA-256:     ${APK_SHA}
+            Signed:      << parameters.is_signed >>
+            EOF
+
+            echo "=== << parameters.build_type >> Artifact Info ==="
+            cat artifacts/build-info.txt
+
+jobs:
+  prepare_and_validate:
+    executor: android_executor
+    steps:
+      - checkout
+      - setup_environment
+
+      - run:
+          name: "Validate configuration and environment variables"
+          command: |
+            echo "=== Validating Build Environment ==="
+            MISSING=0
+            if [ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+              echo "ERROR: GOOGLE_SERVICES_JSON_BASE64 is not set." >&2
+              MISSING=1
+            fi
+
+            # If triggered on a release tag, fail early if signing secrets are missing
+            if [ -n "${CIRCLE_TAG:-}" ]; then
+              echo "Release tag detected ($CIRCLE_TAG). Checking release credentials..."
+              for VAR in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD API_BASE_URL; do
+                if [ -z "${!VAR:-}" ]; then
+                  echo "ERROR: $VAR is required for production release builds." >&2
+                  MISSING=1
+                fi
+              done
+            fi
+
+            if [ $MISSING -ne 0 ]; then
+              exit 1
+            fi
+            echo "Environment variable validation passed."
+
+      - run:
+          name: "Verify Gradle wrapper integrity"
+          command: |
+            echo "=== Verifying Gradle Wrapper Checksums ==="
+            EXPECTED_DIST_SHA="d725d707bfabd4dfdc958c624003b3c80accc03f7037b5122c4b1d0ef15cecab"
+            ACTUAL_DIST_SHA=$(grep "^distributionSha256Sum=" gradle/wrapper/gradle-wrapper.properties | cut -d'=' -f2 | tr -d '\r\n')
+            if [ "$ACTUAL_DIST_SHA" != "$EXPECTED_DIST_SHA" ]; then
+              echo "ERROR: distributionSha256Sum mismatch in gradle-wrapper.properties!" >&2
+              exit 1
+            fi
+
+            EXPECTED_JAR_SHA="498495120a03b9a6ab5d155f5de3c8f0d986a449153702fb80fc80e134484f17"
+            ACTUAL_JAR_SHA=$(sha256sum gradle/wrapper/gradle-wrapper.jar | cut -d' ' -f1)
+            if [ "$ACTUAL_JAR_SHA" != "$EXPECTED_JAR_SHA" ]; then
+              echo "ERROR: gradle-wrapper.jar SHA-256 does not match official Gradle 8.9 release!" >&2
+              exit 1
+            fi
+            echo "Gradle wrapper integrity verified."
+
+      - run:
+          name: "Decode and verify google-services.json"
+          command: |
+            umask 077
+            echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > app/google-services.json
+            chmod 600 app/google-services.json
+
+            if ! grep -q '"package_name": "com.bloodbridge.app"' app/google-services.json; then
+              echo "ERROR: app/google-services.json does not contain package 'com.bloodbridge.app'." >&2
+              rm -f app/google-services.json
+              exit 1
+            fi
+            echo "Firebase configuration validated."
+
+      - restore_cache:
+          name: "Restore Gradle wrapper cache"
+          keys:
+            - gradle-wrapper-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+
+      - run:
+          name: "Initialize Gradle wrapper"
+          command: ./gradlew --version
+
+      - save_cache:
+          name: "Save Gradle wrapper cache"
+          paths:
+            - ~/.gradle/wrapper
+          key: gradle-wrapper-v1-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - app/google-services.json
+
+  unit_tests:
+    executor: android_executor
+    steps:
+      - checkout
+      - setup_environment
+      - attach_workspace:
+          at: .
+      - restore_all_caches
+
+      - run:
+          name: "Execute Unit Tests"
+          command: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
+      - store_test_results:
+          path: app/build/test-results/testDebugUnitTest
+
+      - store_artifacts:
+          path: app/build/reports/tests/testDebugUnitTest
+          destination: reports/unit-tests
+
+      - save_gradle_deps_cache
+
+  android_lint:
+    executor: android_executor
+    steps:
+      - checkout
+      - setup_environment
+      - attach_workspace:
+          at: .
+      - restore_all_caches
+
+      - run:
+          name: "Execute Android Lint"
+          command: ./gradlew lintDebug --no-daemon --stacktrace
+
+      - store_artifacts:
+          path: app/build/reports/lint-results-debug.html
+          destination: reports/lint/lint-results-debug.html
+
+      - store_artifacts:
+          path: app/build/reports/lint-results-debug.xml
+          destination: reports/lint/lint-results-debug.xml
+
+  debug_apk:
+    executor: android_executor
+    steps:
+      - checkout
+      - setup_environment
+      - attach_workspace:
+          at: .
+      - restore_all_caches
+
+      - run:
+          name: "Build Debug APK"
+          command: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - package_apk:
+          build_type: "Debug"
+          apk_src: "app/build/outputs/apk/debug/app-debug.apk"
+          apk_name: "app-debug.apk"
+          is_signed: false
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts
+
+  release_apk:
+    executor: android_executor
+    steps:
+      - checkout
+      - setup_environment
+      - attach_workspace:
+          at: .
+      - restore_all_caches
+
+      - run:
+          name: "Build Signed Release APK"
+          command: |
+            KEYSTORE_DIR="/tmp/release-keystore"
+            mkdir -p "$KEYSTORE_DIR"
+            chmod 700 "$KEYSTORE_DIR"
+            KEYSTORE_FILE="$KEYSTORE_DIR/release.jks"
+
+            cleanup() {
+              if [ -f "$KEYSTORE_FILE" ]; then
+                shred -u "$KEYSTORE_FILE" 2>/dev/null || rm -f "$KEYSTORE_FILE"
+              fi
+              rm -rf "$KEYSTORE_DIR"
+            }
+            trap cleanup EXIT
+
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE"
+            chmod 600 "$KEYSTORE_FILE"
+
+            export ANDROID_KEYSTORE_PATH="$KEYSTORE_FILE"
+            ./gradlew assembleRelease --no-daemon --stacktrace
+
+            cleanup
+            trap - EXIT
+
+      - run:
+          name: "Verify APK Signature with apksigner"
+          command: |
+            APK_SRC="app/build/outputs/apk/release/app-release.apk"
+            if command -v apksigner >/dev/null 2>&1; then
+              apksigner verify --verbose "$APK_SRC"
+              echo "APK signature successfully verified with apksigner."
+            else
+              echo "apksigner not found in PATH; skipping explicit verification."
+            fi
+
+      - package_apk:
+          build_type: "Release"
+          apk_src: "app/build/outputs/apk/release/app-release.apk"
+          apk_name: "app-release.apk"
+          is_signed: true
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts
+
+  artifact_validation:
+    executor: android_executor
+    steps:
+      - setup_environment
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: "Validate Generated Artifacts"
+          command: |
+            echo "=== Validating Artifact Integrity ==="
+            if [ ! -d "artifacts" ]; then
+              echo "ERROR: artifacts directory missing." >&2
+              exit 1
+            fi
+
+            FOUND_APK=0
+            for APK in artifacts/*.apk; do
+              if [ -f "$APK" ]; then
+                FOUND_APK=1
+                SIZE=$(stat -c%s "$APK" 2>/dev/null || stat -f%z "$APK" 2>/dev/null || echo 0)
+                echo "Inspecting $APK (Size: $SIZE bytes)"
+                if [ "$SIZE" -lt 1048576 ]; then
+                  echo "ERROR: $APK size is suspiciously small (< 1MB)!" >&2
+                  exit 1
+                fi
+
+                if [ -f "${APK}.sha256" ]; then
+                  echo "Verifying SHA-256 for $(basename "$APK")..."
+                  (cd artifacts && sha256sum -c "$(basename "${APK}.sha256")")
+                fi
+
+                if command -v aapt >/dev/null 2>&1; then
+                  PKG=$(aapt dump badging "$APK" | grep "package: name=" | head -1)
+                  echo "Package Info: $PKG"
+                  if ! echo "$PKG" | grep -q "com.bloodbridge.app"; then
+                    echo "ERROR: Package name does not match com.bloodbridge.app!" >&2
+                    exit 1
+                  fi
+                fi
+              fi
+            done
+
+            if [ $FOUND_APK -eq 0 ]; then
+              echo "ERROR: No APK found in artifacts directory!" >&2
+              exit 1
+            fi
+
+            echo "=== Artifacts Listing ==="
+            ls -lh artifacts/
+            if [ -f "artifacts/build-info.txt" ]; then
+              cat artifacts/build-info.txt
+            fi
+
+      - store_artifacts:
+          path: artifacts
+          destination: build-artifacts
+
+workflows:
+  build_and_test:
+    jobs:
+      - prepare_and_validate:
+          filters:
+            tags:
+              ignore: /^v.*/
+      - unit_tests:
+          requires:
+            - prepare_and_validate
+          filters:
+            tags:
+              ignore: /^v.*/
+      - android_lint:
+          requires:
+            - prepare_and_validate
+          filters:
+            tags:
+              ignore: /^v.*/
+      - debug_apk:
+          requires:
+            - unit_tests
+            - android_lint
+          filters:
+            tags:
+              ignore: /^v.*/
+      - artifact_validation:
+          requires:
+            - debug_apk
+          filters:
+            tags:
+              ignore: /^v.*/
+
+  release_pipeline:
+    jobs:
+      - prepare_and_validate:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - unit_tests:
+          requires:
+            - prepare_and_validate
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - android_lint:
+          requires:
+            - prepare_and_validate
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - release_apk:
+          requires:
+            - unit_tests
+            - android_lint
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - artifact_validation:
+          requires:
+            - release_apk
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
