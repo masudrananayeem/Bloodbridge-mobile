@@ -49,7 +49,6 @@ import kotlin.math.roundToInt
 fun HomeScreen(vm: AppViewModel) {
     var bloodGroup by rememberSaveable { mutableStateOf("") }
     var district by rememberSaveable { mutableStateOf("") }
-    var upazila by rememberSaveable { mutableStateOf("") }
     var nearMe by rememberSaveable { mutableStateOf(true) }
 
     Scaffold(
@@ -72,13 +71,12 @@ fun HomeScreen(vm: AppViewModel) {
                     )
                     DropdownField("Blood group", bloodGroup, Constants.bloodGroups, { bloodGroup = it }, anyLabel = "Any")
                     DropdownField("District", district, Constants.districts, { district = it }, anyLabel = "Any")
-                    com.bloodbridge.app.ui.AppTextField(upazila, { upazila = it }, "Upazila")
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Text("Near me first", modifier = Modifier.weight(1f))
                         Switch(checked = nearMe, onCheckedChange = { nearMe = it })
                     }
                     ErrorBanner(vm.error)
-                    PrimaryButton("Search", vm.busy, { vm.search(bloodGroup, district, upazila.trim(), nearMe) })
+                    PrimaryButton("Search", vm.busy, { vm.search(bloodGroup, district, "", nearMe) })
                 }
             }
 

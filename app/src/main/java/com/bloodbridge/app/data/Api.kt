@@ -34,6 +34,28 @@ interface BloodBridgeApi {
     @POST("auth/google")
     suspend fun google(@Body body: GoogleBody): AuthResponse
 
+    @GET("admin/stats")
+    suspend fun adminStats(): StatsResponse
+
+    @GET("admin/users")
+    suspend fun adminUsers(
+        @Query("search") search: String?,
+        @Query("page") page: Int,
+        @Query("limit") limit: Int,
+    ): AdminUsersResponse
+
+    @PATCH("admin/users/{id}/verify")
+    suspend fun adminVerify(@Path("id") id: String): OkResponse
+
+    @DELETE("admin/users/{id}")
+    suspend fun adminDeleteUser(@Path("id") id: String): OkResponse
+
+    @GET("admin/requests")
+    suspend fun adminRequests(@Query("status") status: String?): RequestsResponse
+
+    @PATCH("admin/requests/{id}/status")
+    suspend fun adminSetStatus(@Path("id") id: String, @Body body: StatusBody): OkResponse
+
     @GET("auth/me")
     suspend fun me(): MeResponse
 
@@ -93,6 +115,21 @@ interface BloodBridgeApi {
 
     @PATCH("users/mode")
     suspend fun setMode(@Body body: ModeBody): ModeResponse
+
+    @GET("admin/analytics")
+    suspend fun adminAnalytics(): AnalyticsResponse
+
+    @POST("organizations")
+    suspend fun createOrg(@Body body: OrgBody): OkResponse
+
+    @PUT("organizations/{id}")
+    suspend fun updateOrg(@Path("id") id: String, @Body body: OrgBody): OkResponse
+
+    @PATCH("organizations/{id}/verify")
+    suspend fun verifyOrg(@Path("id") id: String): OkResponse
+
+    @DELETE("organizations/{id}")
+    suspend fun deleteOrg(@Path("id") id: String): OkResponse
 
     @GET("notifications")
     suspend fun notifications(): NotificationsResponse

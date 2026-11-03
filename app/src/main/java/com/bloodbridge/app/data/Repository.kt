@@ -115,6 +115,10 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
     suspend fun savedDonors() = api.savedDonors().donors
     suspend fun toggleSaved(id: String) = api.toggleSaved(id)
     suspend fun setMode(mode: String) = api.setMode(ModeBody(mode))
+    suspend fun adminAnalytics() = api.adminAnalytics()
+    suspend fun saveOrg(id: String?, body: OrgBody) = if (id == null) api.createOrg(body) else api.updateOrg(id, body)
+    suspend fun verifyOrg(id: String) = api.verifyOrg(id)
+    suspend fun deleteOrg(id: String) = api.deleteOrg(id)
 
     /** Email-verification helpers (Google accounts are always verified). */
     fun isEmailVerified(): Boolean = auth.currentUser?.isEmailVerified ?: true
@@ -126,6 +130,13 @@ class Repository(private val api: BloodBridgeApi, private val session: Session) 
         auth.currentUser?.sendEmailVerification()?.await()
     }
 
+    suspend fun adminStats() = api.adminStats().stats
+    suspend fun adminUsers(search: String?, page: Int) =
+        api.adminUsers(search?.takeIf { it.isNotBlank() }, page, 24)
+    suspend fun adminVerify(id: String) = api.adminVerify(id)
+    suspend fun adminDeleteUser(id: String) = api.adminDeleteUser(id)
+    suspend fun adminRequests(status: String?) = api.adminRequests(status?.takeIf { it.isNotBlank() }).requests
+    suspend fun adminSetStatus(id: String, status: String) = api.adminSetStatus(id, StatusBody(status))
 
     suspend fun createRequest(body: CreateRequestBody) = api.createRequest(body)
     suspend fun myRequests() = api.myRequests().requests
