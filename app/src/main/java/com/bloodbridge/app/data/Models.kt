@@ -208,32 +208,6 @@ data class OrganizationsResponse(val success: Boolean = true, val organizations:
 data class GoogleBody(val firebaseIdToken: String)
 
 @Serializable
-data class AdminStats(
-    val totalUsers: Int = 0,
-    val totalDonors: Int = 0,
-    val totalSeekers: Int = 0,
-    val pendingRequests: Int = 0,
-    val completedDonations: Int = 0,
-    val totalOrganizations: Int = 0,
-    val incompleteProfiles: Int = 0,
-)
-
-@Serializable
-data class StatsResponse(val success: Boolean = true, val stats: AdminStats = AdminStats())
-
-@Serializable
-data class AdminUsersResponse(
-    val success: Boolean = true,
-    val users: List<User> = emptyList(),
-    val total: Int = 0,
-    val page: Int = 1,
-    val pages: Int = 1,
-)
-
-@Serializable
-data class StatusBody(val status: String)
-
-@Serializable
 data class SavedToggleResponse(val success: Boolean = true, val saved: Boolean = false, val savedDonors: List<String> = emptyList())
 
 @Serializable
@@ -242,31 +216,6 @@ data class ModeBody(val mode: String)
 @Serializable
 data class ModeResponse(val success: Boolean = true, val activeMode: String = "donor")
 
-@Serializable
-data class BloodGroupCount(val bloodGroup: String = "", val count: Int = 0)
-
-@Serializable
-data class StatusCount(val status: String = "", val count: Int = 0)
-
-@Serializable
-data class AnalyticsResponse(
-    val success: Boolean = true,
-    val bloodGroupDistribution: List<BloodGroupCount> = emptyList(),
-    val requestStatusBreakdown: List<StatusCount> = emptyList(),
-)
-
-@Serializable
-data class OrgBody(
-    val name: String,
-    val type: String,
-    val description: String = "",
-    val district: String,
-    val upazila: String = "",
-    val address: String = "",
-    val phone: String,
-    val email: String = "",
-    val website: String = "",
-)
 
 object Constants {
     val bloodGroups = listOf("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")

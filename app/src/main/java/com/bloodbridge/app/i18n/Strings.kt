@@ -167,6 +167,8 @@ private val bnStrings: Map<String, String> = mapOf(
     "Any" to "যেকোনো",
     "Type" to "ধরন",
     "No organizations found." to "কোনো সংগঠন পাওয়া যায়নি।",
+    "Search organizations" to "সংগঠন খুঁজুন",
+    "Visit website" to "ওয়েবসাইট দেখুন",
     "Call" to "কল করুন",
     "Delete account?" to "অ্যাকাউন্ট ডিলিট করবেন?",
     "This permanently deletes your profile, requests and history. This cannot be undone." to "এটি আপনার প্রোফাইল, অনুরোধ ও ইতিহাস স্থায়ীভাবে মুছে ফেলবে। এটি আর ফেরানো যাবে না।",
