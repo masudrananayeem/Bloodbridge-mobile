@@ -59,4 +59,4 @@ Before publishing, verify that the backend's actual data retention/deletion beha
 
 A successful ZIP integrity check is not an Android build test. Run Gradle Sync and `assembleDebug` in Android Studio or CI with a valid `google-services.json` and real `API_BASE_URL`. Then test login, registration, donor search, create/respond/cancel request, profile/photo update, feedback, notification reads and account deletion against the deployed backend.
 
-The included GitHub Actions workflow uses Gradle 8.9 and JDK 17. Configure `GOOGLE_SERVICES_JSON_BASE64` and `API_BASE_URL` repository secrets before running it. Release signing additionally requires the documented keystore secrets.
+The included GitHub Actions workflow uses Gradle 8.9 and JDK 17. Configure `GOOGLE_SERVICES_JSON_BASE64` and `API_BASE_URL` repository secrets before running it. Release signing additionally requires the documented keystore secrets..
