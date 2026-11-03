@@ -308,7 +308,16 @@ jobs:
   artifact_validation:
     executor: android_executor
     steps:
-      - setup_environment
+      # This job consumes only the APK artifacts persisted by debug_apk/release_apk.
+      # It does not check out the source tree, so do not call setup_environment:
+      # that command runs `chmod +x ./gradlew`, but gradlew is not in this workspace.
+      - run:
+          name: "Add Android Build Tools to PATH"
+          command: |
+            BUILD_TOOLS=$(find ${ANDROID_HOME:-/home/circleci/android-sdk}/build-tools -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)
+            if [ -n "$BUILD_TOOLS" ]; then
+              echo "export PATH=\"$BUILD_TOOLS:\$PATH\"" >> "$BASH_ENV"
+            fi
       - attach_workspace:
           at: .
 

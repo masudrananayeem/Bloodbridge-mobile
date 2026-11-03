@@ -17,3 +17,13 @@
 - A local Gradle test run could not start because this environment cannot resolve
   `services.gradle.org` to download Gradle 8.9. Therefore a successful Gradle build
   or test run is NOT claimed. Please rerun CircleCI after pushing this source.
+
+
+## Follow-up fix: artifact_validation job
+- CircleCI's artifact_validation job attaches only the `artifacts` workspace and does not
+  check out the source repository.
+- The shared `setup_environment` command attempted `chmod +x ./gradlew`, but no
+  `gradlew` exists in the artifacts-only workspace. This caused:
+  `chmod: cannot access './gradlew': No such file or directory`.
+- Replaced that step in `artifact_validation` with a Build Tools PATH setup only.
+  The validation job can still use `aapt` without requiring the Gradle wrapper.
