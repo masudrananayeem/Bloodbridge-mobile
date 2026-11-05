@@ -2,6 +2,8 @@ package com.bloodbridge.app.ui.screens
 
 import com.bloodbridge.app.i18n.t
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,8 +14,12 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.platform.LocalContext
 import com.bloodbridge.app.ui.LanguageToggle
@@ -77,11 +83,38 @@ fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
             com.bloodbridge.app.ui.ThemeToggle()
             LanguageToggle()
         }
-        Spacer(Modifier.height(16.dp))
-        Text("BloodBridge", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.ExtraBold, color = Brand)
-        Text(t("Welcome back"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        Text(t("Log in to continue saving lives."), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(
+                    modifier = Modifier.size(58.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                ) {
+                    Text("♥", color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("BloodBridge", style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(t("Together, we save lives."), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(t("Welcome back"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(t("Log in to continue saving lives."), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
 
         AppTextField(email, { email = it }, t("Email"), keyboardType = KeyboardType.Email)
         AppTextField(password, { password = it }, t("Password"), password = true)

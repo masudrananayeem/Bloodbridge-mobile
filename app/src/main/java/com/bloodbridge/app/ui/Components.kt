@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,6 +53,7 @@ fun AppTextField(
         trailingIcon = if (password) {
             { Text(if (visible) t("Hide") else t("Show"), color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickableNoRipple { visible = !visible }) }
         } else null,
+        shape = RoundedCornerShape(16.dp),
         modifier = modifier.fillMaxWidth(),
     )
 }
@@ -89,7 +91,12 @@ fun DropdownField(
 
 @Composable
 fun PrimaryButton(text: String, busy: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(onClick = onClick, enabled = !busy, modifier = modifier.fillMaxWidth().height(50.dp)) {
+    Button(
+        onClick = onClick,
+        enabled = !busy,
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.fillMaxWidth().height(54.dp),
+    ) {
         if (busy) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
         } else {
