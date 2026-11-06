@@ -8,7 +8,7 @@ This is the **client-only Android app** for BloodBridge. It contains no admin da
 2. Use JDK 17 and let Android Studio sync the Gradle project.
 3. Add your Firebase Android config at `app/google-services.json` (package: `com.bloodbridge.app`).
 4. Set the environment values below in the root `gradle.properties` (do not commit real secrets or private configuration to a public repository).
-5. Build > Make Project, then run on an emulator or Android device.
+5. Build > Make Project, then run on an emulator or Android device
 
 ## 2. Backend and Service Configuration
 
