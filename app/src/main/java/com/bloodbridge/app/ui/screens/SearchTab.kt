@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bloodbridge.app.data.Constants
@@ -93,8 +94,15 @@ fun SearchTab(vm: AppViewModel) {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+                Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Brand), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.background(Brush.horizontalGradient(listOf(Color(0xFFE11D24), Color(0xFF8F151D)))).padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("${t("Welcome,")} ${vm.user?.fullName?.substringBefore(' ')?.ifBlank { t("Seeker") } ?: t("Seeker")} 👋", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                        Text(t("Your Seeker Dashboard"), color = Color.White.copy(alpha = .92f))
+                        Text(vm.user?.district.orEmpty(), color = Color.White, fontWeight = FontWeight.SemiBold)
+                    }
+                }
                 StatsRow(vm, "seeker")
-                Text("${t("Hello,")} ${vm.user?.fullName?.substringBefore(' ').orEmpty()}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(t("Find a Donor"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 DropdownField(t("Blood group"), bloodGroup, Constants.bloodGroups, { bloodGroup = it }, anyLabel = t("Any"))
                 DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
                 com.bloodbridge.app.ui.AppTextField(upazila, { upazila = it }, t("Upazila"))

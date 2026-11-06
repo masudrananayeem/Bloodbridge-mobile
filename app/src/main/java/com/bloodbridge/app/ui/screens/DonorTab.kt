@@ -2,6 +2,7 @@ package com.bloodbridge.app.ui.screens
 
 import com.bloodbridge.app.i18n.lbl
 import com.bloodbridge.app.i18n.t
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +37,7 @@ import com.bloodbridge.app.data.daysUntilEligible
 import com.bloodbridge.app.data.nextEligibleLabel
 import com.bloodbridge.app.data.shortDate
 import com.bloodbridge.app.ui.AppViewModel
+import com.bloodbridge.app.ui.Brand
 import com.bloodbridge.app.ui.BloodLevelBody
 import com.bloodbridge.app.ui.ErrorBanner
 
@@ -50,7 +54,17 @@ fun DonorTab(vm: AppViewModel) {
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item { Spacer(Modifier.height(8.dp)) }
+        item { Spacer(Modifier.height(6.dp)) }
+        item {
+            val firstName = user?.fullName?.substringBefore(' ')?.takeIf { it.isNotBlank() } ?: t("Donor")
+            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Brand), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.background(Brush.horizontalGradient(listOf(Color(0xFFE11D24), Color(0xFF8F151D)))).padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("${t("Welcome,")} $firstName 👋", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                    Text(t("Your Donor Dashboard"), color = Color.White.copy(alpha = .9f))
+                    Text("${user?.bloodGroup ?: "—"}   •   ${if (isAvailable) t("Available") else t("Unavailable")}   •   ${com.bloodbridge.app.data.ageFromDob(user?.dateOfBirth)?.let { "$it ${t("yrs")}" } ?: "—"}", color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
         item { StatsRow(vm, "donor") }
         item {
             Card(

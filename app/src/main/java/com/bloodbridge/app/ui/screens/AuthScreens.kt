@@ -1,21 +1,20 @@
 package com.bloodbridge.app.ui.screens
 
 import com.bloodbridge.app.i18n.t
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.background
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -33,6 +32,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.bloodbridge.app.data.Constants
@@ -84,37 +86,21 @@ fun LoginScreen(vm: AppViewModel, onGoRegister: () -> Unit) {
             LanguageToggle()
         }
         Spacer(Modifier.height(8.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(26.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Box(
-                    modifier = Modifier.size(58.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(18.dp))
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = androidx.compose.ui.Alignment.Center,
-                ) {
-                    Text("♥", color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Brand), modifier = Modifier.fillMaxWidth()) {
+            Row(Modifier.background(Brush.horizontalGradient(listOf(Color(0xFFE11D24), Color(0xFF74131A)))).padding(20.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                androidx.compose.foundation.layout.Box(Modifier.size(62.dp).background(Color.White.copy(alpha = .16f), RoundedCornerShape(18.dp)), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Text("♥", color = Color.White, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("BloodBridge", style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text(t("Together, we save lives."), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                Column(Modifier.padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("BloodBridge", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                    Text(t("Together, we save lives."), color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Text(t("Welcome back"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(10.dp))
+        Text(t("Welcome back"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
         Text(t("Log in to continue saving lives."), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
 
         AppTextField(email, { email = it }, t("Email"), keyboardType = KeyboardType.Email)
         AppTextField(password, { password = it }, t("Password"), password = true)

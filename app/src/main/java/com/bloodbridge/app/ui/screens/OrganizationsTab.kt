@@ -16,9 +16,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,21 +36,27 @@ import com.bloodbridge.app.data.Organization
 import com.bloodbridge.app.ui.AppViewModel
 import com.bloodbridge.app.ui.DropdownField
 import com.bloodbridge.app.ui.ErrorBanner
+import com.bloodbridge.app.ui.AppTextField
 
 @Composable
 fun OrganizationsTab(vm: AppViewModel) {
     var district by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(district, type) { vm.loadOrganizations(district, type, "") }
+    var query by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(district, type) { vm.loadOrganizations(district, type, query) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 14.dp)) {
+                Text(t("Organizations"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                Text(t("Find blood donor clubs, voluntary groups and blood banks."), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                AppTextField(query, { query = it }, t("Search organizations"))
                 DropdownField(t("District"), district, Constants.districts, { district = it }, anyLabel = t("Any"))
                 DropdownField(t("Type"), type, Constants.orgTypes, { type = it }, anyLabel = t("Any"))
+                Button(onClick = { vm.loadOrganizations(district, type, query.trim()) }, enabled = !vm.busy, modifier = Modifier.fillMaxWidth()) { Text(t("Search")) }
                 ErrorBanner(vm.error)
             }
         }
@@ -75,11 +83,27 @@ private fun OrgCard(org: Organization) {
             if (org.description.isNotBlank()) Text(org.description, style = MaterialTheme.typography.bodyMedium)
             val place = listOf(org.address, org.upazila, lbl(org.district)).filter { it.isNotBlank() }.joinToString(", ")
             if (place.isNotBlank()) Text(place, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            if (org.email.isNotBlank()) {
+                Text("✉  ${org.email}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
             if (org.phone.isNotBlank()) {
                 OutlinedButton(
                     onClick = { context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${org.phone}"))) },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("${t("Call")} ${org.phone}") }
+            }
+            val website = org.website.trim().let { raw ->
+                when {
+                    raw.isBlank() -> ""
+                    raw.startsWith("https://", true) || raw.startsWith("http://", true) -> raw
+                    else -> "https://$raw"
+                }
+            }
+            if (website.isNotBlank()) {
+                TextButton(
+                    onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(website))) } },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("🌐  ${t("Visit website")}", fontWeight = FontWeight.SemiBold) }
             }
         }
     }

@@ -1,15 +1,39 @@
 package com.bloodbridge.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bloodbridge.app.i18n.t
@@ -17,12 +41,11 @@ import com.bloodbridge.app.ui.AppViewModel
 import com.bloodbridge.app.ui.Brand
 
 private data class TabItem(val id: String, val label: String, val icon: String)
-
 private val allTabs = mapOf(
     "find" to TabItem("find", "Find", "⌕"),
     "requests" to TabItem("requests", "Requests", "▤"),
     "donor" to TabItem("donor", "Donor", "♥"),
-    "orgs" to TabItem("orgs", "Organizations", "＋"),
+    "orgs" to TabItem("orgs", "Organizations", "♧"),
     "alerts" to TabItem("alerts", "Alerts", "♧"),
     "profile" to TabItem("profile", "Profile", "●"),
 )
@@ -30,56 +53,32 @@ private val allTabs = mapOf(
 @Composable
 fun MainShell(vm: AppViewModel) {
     val mode = vm.user?.activeMode ?: "donor"
-    val tabIds = if (mode == "donor") listOf("requests", "donor", "orgs", "alerts", "profile")
-        else listOf("find", "requests", "alerts", "profile")
-    var selected by rememberSaveable { mutableStateOf("requests") }
+    val tabIds = if (mode == "donor") listOf("requests", "donor", "orgs", "alerts", "profile") else listOf("find", "requests", "alerts", "profile")
+    var selected by rememberSaveable { mutableStateOf("donor") }
     val current = if (selected in tabIds) selected else tabIds.first()
     val snackbar = remember { SnackbarHostState() }
-
-    LaunchedEffect(vm.info) {
-        vm.info?.let { snackbar.showSnackbar(it); vm.clearInfo() }
-    }
+    LaunchedEffect(vm.info) { vm.info?.let { snackbar.showSnackbar(it); vm.clearInfo() } }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp,
-            ) {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 8.dp) {
                 tabIds.forEach { id ->
                     val item = allTabs.getValue(id)
                     NavigationBarItem(
                         selected = current == id,
                         onClick = { vm.clearError(); selected = id },
-                        icon = {
-                            Box(
-                                modifier = Modifier.size(30.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (current == id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(item.icon, color = if (current == id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            }
-                        },
-                        label = { Text(t(item.label), style = MaterialTheme.typography.labelSmall) },
-                        alwaysShowLabel = true,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        ),
+                        icon = { Text(item.icon, fontWeight = FontWeight.Bold) },
+                        label = { Text(t(item.label)) },
                     )
                 }
             }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            AppTopHeader(vm = vm, mode = mode)
+        Column(Modifier.padding(padding)) {
+            AppHeader(vm = vm, mode = mode, onChange = { vm.setMode(it) })
             if (!vm.emailVerified) VerifyEmailBanner(vm)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
             Box(Modifier.weight(1f)) {
                 when (current) {
                     "find" -> FindTab(vm)
@@ -95,54 +94,34 @@ fun MainShell(vm: AppViewModel) {
 }
 
 @Composable
-private fun AppTopHeader(vm: AppViewModel, mode: String) {
+private fun AppHeader(vm: AppViewModel, mode: String, onChange: (String) -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 18.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(42.dp).clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) { Text("♥", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.headlineSmall) }
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text("BloodBridge", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurface)
-                Text(t("Together, we save lives"), style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(listOf(Brand, Color(0xFF8F1018)))), contentAlignment = Alignment.Center) {
+                Text("♥", color = Color.White, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineSmall)
             }
-            Box(Modifier.size(38.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center) {
-                Text(vm.user?.fullName?.firstOrNull()?.uppercase() ?: "B", fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f).padding(start = 11.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text("BloodBridge", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                Text("Together, we save lives", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
+                    Text(vm.user?.fullName?.firstOrNull()?.uppercase() ?: "U", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                }
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant).padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            listOf("donor" to "Blood Donor", "seeker" to "Blood Seeker").forEach { (value, label) ->
-                val selected = mode == value
-                Surface(
-                    onClick = { if (!selected) vm.setMode(value) },
-                    enabled = !vm.busy,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                    shadowElevation = if (selected) 2.dp else 0.dp,
-                ) {
-                    Text(
-                        (if (value == "donor") "♥  " else "⌕  ") + t(label),
-                        modifier = Modifier.padding(vertical = 11.dp, horizontal = 6.dp),
-                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    )
+            listOf("donor" to "♥  Blood Donor", "seeker" to "⌕  Blood Seeker").forEach { (value, label) ->
+                if (mode == value) {
+                    Button(onClick = {}, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) { Text(label, fontWeight = FontWeight.Bold) }
+                } else {
+                    TextButton(onClick = { onChange(value) }, enabled = !vm.busy, modifier = Modifier.weight(1f)) { Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold) }
                 }
             }
         }
