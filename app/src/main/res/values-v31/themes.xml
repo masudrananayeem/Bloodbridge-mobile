@@ -1,17 +1,32 @@
+
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.BloodBridge" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowSplashScreenBackground">#0B111B</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <item name="android:windowSplashScreenAnimationDuration">500</item>
-        <item name="android:postSplashScreenTheme">@style/Theme.BloodBridge.App</item>
+
+    <!-- BloodBridge Splash Screen Theme -->
+    <style name="Theme.BloodBridge" parent="Theme.SplashScreen">
+
+        <item name="windowSplashScreenBackground">#0B111B</item>
+
+        <item name="windowSplashScreenAnimatedIcon">
+            @mipmap/ic_launcher
+        </item>
+
+        <item name="windowSplashScreenAnimationDuration">500</item>
+
+        <item name="postSplashScreenTheme">
+            @style/Theme.BloodBridge.App
+        </item>
+
+    </style>
+
+    <!-- Main Application Theme -->
+    <style name="Theme.BloodBridge.App"
+        parent="android:Theme.Material.Light.NoActionBar">
+
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:statusBarColor">#0B111B</item>
         <item name="android:navigationBarColor">#0B111B</item>
+
     </style>
-    <style name="Theme.BloodBridge.App" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">#0B111B</item>
-        <item name="android:navigationBarColor">#0B111B</item>
-    </style>
+
 </resources>
