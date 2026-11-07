@@ -1,32 +1,14 @@
-
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <!-- BloodBridge Splash Screen Theme -->
     <style name="Theme.BloodBridge" parent="Theme.SplashScreen">
-
-        <item name="windowSplashScreenBackground">#0B111B</item>
-
-        <item name="windowSplashScreenAnimatedIcon">
-            @mipmap/ic_launcher
-        </item>
-
-        <item name="windowSplashScreenAnimationDuration">500</item>
-
-        <item name="postSplashScreenTheme">
-            @style/Theme.BloodBridge.App
-        </item>
-
+        <item name="android:windowSplashScreenBackground">#0B111B</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenAnimationDuration">500</item>
+        <item name="postSplashScreenTheme">@style/Theme.BloodBridge.App</item>
     </style>
 
-    <!-- Main Application Theme -->
-    <style name="Theme.BloodBridge.App"
-        parent="android:Theme.Material.Light.NoActionBar">
-
+    <style name="Theme.BloodBridge.App" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:statusBarColor">#0B111B</item>
         <item name="android:navigationBarColor">#0B111B</item>
-
     </style>
-
 </resources>

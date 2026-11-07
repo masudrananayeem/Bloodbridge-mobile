@@ -1,7 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.BloodBridge" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/bloodbridge_splash_background</item>
+    <style name="Theme.BloodBridge" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0B111B</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.BloodBridge.App</item>
+    </style>
+
+    <style name="Theme.BloodBridge.App" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:statusBarColor">#0B111B</item>
         <item name="android:navigationBarColor">#0B111B</item>
